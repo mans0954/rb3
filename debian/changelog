@@ -7,6 +7,7 @@ rb3 (1.42-1) UNRELEASED; urgency=medium
   * Add ${misc:Depends} to debian/control
   * Add Homepage: to debian/control
   * Remove custom field from debian/control
+  * Switch debian/rules to dh
 
  -- Christopher Hoskin <mans0954@debian.org>  Mon, 22 Jan 2018 20:57:31 +0000
 
