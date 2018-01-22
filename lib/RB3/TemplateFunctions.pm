@@ -1,10 +1,21 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.25/lib/RB3/TemplateFunctions.pm $
-# $LastChangedRevision: 17157 $
-# $LastChangedDate: 2010-04-20 14:29:26 +0100 (Tue, 20 Apr 2010) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.26/lib/RB3/TemplateFunctions.pm $
+# $LastChangedRevision: 17888 $
+# $LastChangedDate: 2010-12-08 18:32:02 +0000 (Wed, 08 Dec 2010) $
 # $LastChangedBy: dom $
 #
 package RB3::TemplateFunctions;
+
+=head1 NAME
+
+RB3::TemplateFunctions - functions imported into Template Toolkit namespace
+
+=head1 DESCRIPTION
+
+This module defines additional functions which are imported into the
+Template Toolkit namespace.
+
+=cut
 
 use strict;
 use warnings FATAL => 'all';
@@ -39,6 +50,25 @@ sub ipaddr {
     @res == 5
         or die "more than one address for $addr";
     return inet_ntoa( $res[4] );
+}
+
+sub ip6addr {
+    my $addr = shift;
+    my @addresses = dnslookup($addr, 'AAAA');
+    die "More than one AAAA returned for ip6addr"
+        unless scalar @addresses == 1;
+    return $addresses[0];
+}
+
+sub ip6addr_eok {
+    my $addr = shift;
+    my $address = eval {
+        ip6addr($addr);
+    };
+    if ($@) {
+        die $@ unless $@ =~ /NOERROR/;
+    }
+    return $address;
 }
 
 # <http://cboard.cprogramming.com/c-programming/109269-hash-function-translated-cplusplus.html>
@@ -90,7 +120,18 @@ sub hash {
                 }
                 push @results, $rr->ptrdname;
             }
-            return @results
+            return @results;
+        } elsif ( $type eq 'AAAA' ) {
+            my $query = $resolver->query( $hostname, 'AAAA' )
+                or die "Query AAAA records for $hostname: " . $resolver->errorstring;
+            my @results;
+            foreach my $rr ( $query->answer ) {
+                if ( ( my $type = $rr->type ) ne 'AAAA' ) {
+                    die "Query AAAA records for $hostname returned unexpected $type record";
+                }
+                push @results, $rr->address;
+            }
+            return @results;
         } else {
                 die "Unrecognized type '$type' for DNS lookup\n";
             }
@@ -110,6 +151,160 @@ sub find_netmask_in_table {
     Net::Netmask::findNetblock($address, $table);
 }
 
+=head1 FUNCTIONS
+
+The following functions are available:
+
+=over 4
+
+=item hostname
+
+Takes an IPv4 address and returns a hostname.
+
+    [% hostname('127.0.0.1') %]
+
+=item dnslookup
+
+Takes a hostname and an optional record type and performs a DNS lookup,
+returning the results as a list. Supported record types: A, PTR, AAAA, MX.
+
+    [% dnslookup('www.example.org', 'A').join(',') %]
+    [% dnslookup('192.168.1.1', 'PTR').join(',') %]
+    [% dnslookup('www.example.org', 'AAAA').join(',') %]
+
+BUG: The MX type is special; it performs a lookup for the IPv4 address
+of the names before returning them
+
+    [% dnslookup('example.org', 'MX').join(',') %]
+
+=item store_netmask_in_table
+
+Takes a netmask and a Net::Netmask 'table' hashref and stores the netmask
+in the table. See storeNetblock in L<Net::Netmask>.
+
+    [% SET table = {} %]
+    [% SET store_result = store_netmask_in_table('192.168.1.0/24') %]
+
+=item find_netmask_in_table
+
+Takes a test address and a Net::Netmask 'table' hashref and returns
+true if the test address is enclosed by the table, and false otherwise.
+
+    [% SET is_in_table = netmask('192.168.0.1', table) %]
+
+=item ipaddr
+
+Takes a hostname and returns an IPv4 address
+
+    [% ipaddr('localhost') %]
+
+=item ip6addr
+
+Takes a hostname and returns an IPv6 address. Throws an exception if
+none exists.
+
+    [% ip6addr('dual-stack.example.org') %]
+
+=item ip6addr_eok
+
+Takes a hostname and returns an IPv6 address. Does not throw an exception
+if none exists.
+
+    [% ip6addr_eok('legacy-host.example.org') %]
+
+=item netblock
+
+Takes a hostname or IPv4 address and returns the IPv4 CIDR netblock
+representing it. Returns the special value 'any' unaltered.
+
+    [% netblock('myhost.example.org') %]
+    # returns '192.168.1.1/32'
+
+=item netmask
+
+Takes a hostname or IPv4 address and returns the IPv4 network number
+and netmask in the standard notation. 
+
+    [% netmask('myhost.example.org') %]
+    # returns '192.168.1.1/255.255.255.255'
+
+=item dirname
+
+Returns the name of the directory containing a file. See L<File::Basename>.
+
+    [% dirname('/etc/fstab') %]
+    # returns '/etc'
+
+=item basename
+
+Returns the name of a file after stripping the directory component.
+See L<File::Basename>.
+
+    [% basename('/etc/init.d/sshd') %]
+    # returns 'sshd'
+
+=item iface_parent
+
+Takes a pair of colon-separated values and returns the first only
+
+    [% iface_parent('eth0:www') %]
+    # returns 'eth0'
+
+BUG: this function is badly named.
+
+=item is_member
+
+Takes a scalar and a list ref and returns true if the scalar is 
+contained in the list and false otherwise.
+
+    [% SET mylist = ['foo', 'bar', 'wibble'] %]
+    [% is_member('baz', mylist) %]
+
+=item difference
+
+Takes two sets (lists) and returns the differences between them
+
+    [% SET list1 = ['foo', 'bar', 'baz'] %]
+    [% SET list2 = ['bar', 'foo'] %]
+    [% difference(list1, list2) %]
+    # returns 'baz'
+
+=item keyorder_sort_on_subhashes_num
+
+Takes a hash and a sort key, and returns a list of keys sorted numerically
+on the named subhash sort key
+
+    [% SET myhash = {
+        person1 => { name => 'jill',
+                     id => 1 },
+        person2 => { name => 'bob',
+                     id => 2 } } %]
+
+    [% keyorder_sort_on_subhashes_num(myhash, 'id').join(',') %]
+    # returns person1,person2
+
+=item keyorder_sort_on_subhashes_string
+
+Takes a hash and a sort key, and returns a list of keys sorted alphanumerically
+on the named subhash sort key
+
+    [% keyorder_sort_on_subhashes_string(myhash, 'name').join(',') %]
+    # returns person2,person1
+
+=item shuffle
+
+Takes a list and a string to be used as a constant for a shuffle function
+and returns the shuffle list
+
+    [% SET myns = [ '192.168.1.1', '192.168.1.2', '192.168.1.3' ] %]
+    [% FOREACH ns IN shuffle(myns, params.hostname) -%]
+    nameserver [% ns %]
+    [% END -%]
+
+=back
+
+=cut
+
 our %functions = (
     hostname => sub {
         my $addr = inet_aton(shift);
@@ -121,6 +316,8 @@ our %functions = (
     find_netmask_in_table => \&find_netmask_in_table,
 
     ipaddr => sub { ipaddr( shift ) },
+    ip6addr => sub { ip6addr( shift ) },
+    ip6addr_eok => sub { ip6addr_eok( shift ) },
 
     netblock => sub {
         my $netblock = shift;
@@ -205,5 +402,11 @@ our %functions = (
 );
 
 1;
+
+=head1 SEE ALSO
+
+L<rb3(1)>
+
+=cut
 
 __END__

@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.25/lib/RB3/File.pm $
-# $LastChangedRevision: 16182 $
-# $LastChangedDate: 2009-09-16 18:01:52 +0100 (Wed, 16 Sep 2009) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.26/lib/RB3/File.pm $
+# $LastChangedRevision: 17648 $
+# $LastChangedDate: 2010-10-05 23:12:33 +0100 (Tue, 05 Oct 2010) $
 # $LastChangedBy: tom $
 #
 package RB3::File;
@@ -23,7 +23,7 @@ use RB3::ParameterList;
 {
     my %dest_of       :ATTR( :get<dest>    :init_arg<dest> );
     my %source_of     :ATTR( :name<source> :default<>      );
-    my %rb3_source_of :ATTR( :name<rb3_source> :default<>  );
+    my %rb3_source_of :ATTR( :init_arg<rb3_source> :set<rb3_source> :default<>  );
     my %owner_of      :ATTR( :get<owner>                   );
     my %group_of      :ATTR( :get<group>                   );
     my %mode_of       :ATTR( :get<mode>                    );
@@ -68,6 +68,12 @@ use RB3::ParameterList;
     sub get_ctmeta_path {
         my $self = shift;
         return File::Spec->catdir($self->get_notation, $self->get_dest);
+    }
+
+    sub get_rb3_source {
+        my ($self) = @_;
+
+        return $rb3_source_of{ident $self};
     }
 }
 

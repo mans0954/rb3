@@ -1,0 +1,54 @@
+#!/bin/bash
+#
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3-test/trunk/bin/rb3-test-subversion $
+# $LastChangedRevision: 17424 $
+# $LastChangedDate: 2010-07-23 18:21:59 +0100 (Fri, 23 Jul 2010) $
+# $LastChangedBy: dom $
+
+set -e
+
+. /usr/share/libsysdev-common-bash/sysdev_common.sh
+
+need_var RB3_TEST_URL
+need_var RB3_TEST_DIR
+need_var RB3_TEST_UNUSED_BUT_WANTED_FILE
+need_var RB3_TEST_UNUSED_CANDIDATE_DIRS
+
+if test -d ${RB3_TEST_DIR}; then
+    echo "${RB3_TEST_DIR} already exists; aborting"
+    exit 1
+fi
+
+# test atime
+mkdir ${RB3_TEST_DIR}
+touch ${RB3_TEST_DIR}/test_atime
+TEST_ATIME_FILE=`mktemp`
+# assume -atime only works in 1 second resolution
+sleep 2
+cat ${RB3_TEST_DIR}/test_atime > /dev/null
+TEST_ATIME_OUTPUT=`find ${RB3_TEST_DIR}/test_atime -anewer ${TEST_ATIME_FILE}`
+if test -z ${TEST_ATIME_OUTPUT}; then
+    echo "${RB3_TEST_DIR} doesn't seem to be on a filesystem with atimes enabled; aborting"
+    exit 1
+fi
+rm -f ${RB3_TEST_DIR}/test_atime ${TEST_ATIME_FILE}
+rmdir ${RB3_TEST_DIR}
+
+# rb3 build
+svn co -q ${RB3_TEST_URL} ${RB3_TEST_DIR}
+cd ${RB3_TEST_DIR}
+TEST_ATIME_FILE=`mktemp`
+sleep 2
+rb3 build --silent systems/*
+svn status
+
+# atime check
+find ${RB3_TEST_UNUSED_CANDIDATE_DIRS} \! -anewer ${TEST_ATIME_FILE} \
+    | egrep -v '\.svn' > unused_files.txt
+
+if test -s unused_files.txt; then
+    diff <(grep -v '^#' ${RB3_TEST_UNUSED_BUT_WANTED_FILE}|sort) <(sort unused_files.txt) | egrep '^(<|>)'
+fi
+
+# keywords check
+find . -path '*.svn*' -prune -o -print | svn-keywords-check

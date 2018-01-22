@@ -1,3 +1,21 @@
+rb3 (1.26) unstable; urgency=low
+
+  [ Tom Jones ]
+  * Add subcommand "why-path", for showing inclusion paths for rb3 files
+    and generated output files.
+
+  [ Dominic Hargreaves ]
+  * Add example rb3-test-subversion script
+  * lib/RB3/TemplateFunctions.pm:
+    - add AAAA support to dnslookup
+    - add ip6addr and ip6addr_eok functions for looking up a single
+      AAAA record. ip6addr_eok does not die if no results are returned,
+      making it suitable for supporting hosts that may or may not be
+      dual-stack
+  * Add documentation for template functions
+
+ -- Dominic Hargreaves <dominic.hargreaves@oucs.ox.ac.uk>  Wed, 08 Dec 2010 18:39:15 +0000
+
 rb3 (1.25) unstable; urgency=low
 
   * lib/RB3/CLI/Build.pm

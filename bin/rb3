@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.25/bin/rb3 $
-# $LastChangedRevision: 16972 $
-# $LastChangedDate: 2010-02-12 12:28:25 +0000 (Fri, 12 Feb 2010) $
-# $LastChangedBy: tom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.26/bin/rb3 $
+# $LastChangedRevision: 17889 $
+# $LastChangedDate: 2010-12-08 18:37:37 +0000 (Wed, 08 Dec 2010) $
+# $LastChangedBy: dom $
 #
 
 =head1 NAME
@@ -44,6 +44,17 @@ The report is in YAML format.
 Report on the content of the "params" data structure for SYSTEM_DIR.
 
 The report is in YAML format.
+
+=head2 why-path SYSTEM_DIR PATH
+
+Report the chain of rb3 files that lead to PATH.  PATH can be an
+rb3 file that is used by the system, or the relative path of a
+generated file from within the system root (example: C<etc/motd>).  
+Future versions may allow
+a wider range of ways of specifying PATHs for generated files.
+
+If there are multiple chains that lead to PATH, an arbitrary one
+is reported on.
 
 =head2 find-installed PACKAGE
 
@@ -232,6 +243,13 @@ List of paths in which to place C<configtool.meta>.  Default
 is /etc/configtool.meta.
 
 =back
+
+=head1 TEMPLATE FUNCTIONS
+
+The rb3 package imports some functions into the Template Toolkit main
+namespace so they can be used directly by templates. These functions
+are defined in L<RB3::TemplateFunctions>; see the documentation for that
+module for a detailed description.
 
 =head1 EXAMPLES
 

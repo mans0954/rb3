@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.25/lib/RB3/Config.pm $
-# $LastChangedRevision: 16292 $
-# $LastChangedDate: 2009-10-02 12:03:22 +0100 (Fri, 02 Oct 2009) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.26/lib/RB3/Config.pm $
+# $LastChangedRevision: 17648 $
+# $LastChangedDate: 2010-10-05 23:12:33 +0100 (Tue, 05 Oct 2010) $
 # $LastChangedBy: tom $
 #
 package RB3::Config;
@@ -19,8 +19,10 @@ use File::Basename qw( basename );
 use File::Find;
 use File::Spec;
 use IO::File;
+use RB3::File;
 use RB3::FileList;
 use RB3::ParameterList;
+use RB3::RB3File;
 use YAML;
 
 {
@@ -30,6 +32,7 @@ use YAML;
     my %params_of        :ATTR( :get<parameter_list> );
     my %repovars_of      :ATTR( :get<repovars_list> );
     my %params_files_of  :ATTR( :get<params_file_list> );
+    my %rb3_files        :ATTR;
 
     sub BUILD {
         my ( $self, $obj_id, $arg_ref ) = @_;
@@ -49,7 +52,8 @@ use YAML;
 
     sub read_config {
         my $self = shift;
-        $self->parse_rb3( $self->get_rb3_path, 0 );
+        $self->parse_rb3(RB3::RB3File->new({path => $self->get_rb3_path}), 0);
+        return;
     }
 
     sub get_root_dir {
@@ -77,27 +81,40 @@ use YAML;
 
         my $files = $self->get_file_list;
 
-        File::Find::find( sub {
-                              if ( -d && /^\.svn$/ ) {
-                                  $File::Find::prune = 1;
-                                  return;
-                              }
-                              if ( -f _ ) {
-                                  $files->add_file( { dest => File::Spec->abs2rel( $File::Find::name, $sys_root_dir ) } );
-                              }
-                          },
-                          $sys_root_dir);
+        File::Find::find(
+            sub {
+                if ( -d && /^\.svn$/ ) {
+                    $File::Find::prune = 1;
+                    return;
+                }
+                if ( -f _ ) {
+                    $files->add_file(
+                        RB3::File->new({
+                            dest => File::Spec->abs2rel( 
+                                $File::Find::name, $sys_root_dir 
+                            ) 
+                        })
+                    );
+                }
+            },
+            $sys_root_dir
+        );
     }
 
     sub parse_rb3 : PRIVATE {
         my ( $self, $rb3, $depth ) = @_;
 
-        die( "Exceeded maximum parse depth at $rb3 line $. - circular includes?\n" )
+        $self->register_rb3_file($rb3);
+
+        die( "Exceeded maximum parse depth at " . $rb3->path
+            . " line $. - circular includes?\n" )
             if $depth > __PACKAGE__->MaxDepth;
 
-        my $fh = IO::File->new( $rb3, O_RDONLY )
-            or die( "Error opening $rb3: $!\n" );
-        push @{$rb3_files_of{ ident $self }}, File::Spec->abs2rel( $rb3, '.' );
+        my $fh = IO::File->new( $rb3->path, O_RDONLY )
+            or die( "Error opening " . $rb3->path . ": $!\n" );
+        push @{$rb3_files_of{ ident $self }}, 
+            File::Spec->abs2rel( $rb3->path, '.' );
+
         while ( <$fh> ) {
             next if /^#/;
             chomp;
@@ -108,7 +125,7 @@ use YAML;
             if ( s{^\+}{} ) {
                 my $args = parse_add_args( split );
 
-                $args->{ rb3_source } = File::Spec->abs2rel( $rb3, '.' );
+                $args->{ rb3_source } = $rb3;
                 $self->get_file_list->add_file( RB3::File->new( $args ) );
             }
             elsif ( s{^\-/?}{} ) {
@@ -121,7 +138,12 @@ use YAML;
             }
             elsif ( s{^\=}{} ) {
                 my $rb3_path = File::Spec->catfile( '.', $_ );
-                $self->parse_rb3( $rb3_path, $depth + 1 );
+                my $child_rb3 = RB3::RB3File->new({
+                    path => $rb3_path, parent => $rb3,
+                });
+
+                $self->parse_rb3($child_rb3, $depth + 1);
+
             }
             elsif ( s{^\:}{} ) {
                 my $repovars_path = File::Spec->catfile( '.', $_ );
@@ -183,6 +205,37 @@ use YAML;
         return \%properties;
     }
 
+    sub why_path {
+        my ($self, $path) = @_;
+
+        # $path could be a generated file or an rb3 file
+
+        my $file = $self->get_file_list->get_file($path);
+        if (defined($file)) {
+            return ($path, $file->get_rb3_source->get_path_stack);
+        }
+        
+        $file = $self->rb3_file_by_path($path);
+
+        if (defined($file)) {
+            return $file->get_path_stack;
+        }
+
+        die "don't know about $path\n";
+    }
+
+    sub rb3_file_by_path {
+        my ($self, $path) = @_;
+
+        return $rb3_files{ident $self}{$path};
+    }
+
+    sub register_rb3_file {
+        my ($self, $rb3f) = @_;
+
+        $rb3_files{ident $self}{$rb3f->path} = $rb3f;
+        return;
+    }
 }
 
 1;
