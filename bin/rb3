@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.41.2/bin/rb3 $
-# $LastChangedRevision: 23978 $
-# $LastChangedDate: 2014-05-30 11:04:28 +0100 (Fri, 30 May 2014) $
-# $LastChangedBy: oucs0173 $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.42/bin/rb3 $
+# $LastChangedRevision: 26493 $
+# $LastChangedDate: 2015-06-22 16:53:06 +0100 (Mon, 22 Jun 2015) $
+# $LastChangedBy: oucs0146 $
 #
 
 =head1 NAME
@@ -114,8 +114,8 @@ See L<REPOSITORY LAYOUT ASSUMPTIONS> below.
 
 =head2 graph SYSTEM_DIR [...]
 
-Generate a tree to illustrate the dependancies between the files used to build
-a the system whose configuration is found ind SYSTEM_DIR.
+Generate a tree to illustrate the dependencies between the files used to build
+a the system whose configuration is found in SYSTEM_DIR.
 
 This command generates the rb3 tree (all files) for selected systems.
 The generated output is a graphviz dot file in the export directory of each
@@ -127,6 +127,29 @@ The graph uses the following colour code:
  - green: generated files
  - black: sources for generated files (mostly template toolkit files)
  - gray: files that are not generated (suppressed with a -)
+
+=head2 list-vms SYSTEM_DIR
+
+List the (Xen) virtual machines hosted on the system whose configuration
+is found in SYSTEM_DIR.  The output includes the VM number (as defined in
+rb3), the hostname of the vm, and it's description (as defined in
+F<defaults/virt/virtual_machines.yml>).
+
+F<defaults/virt/virtual_machines.yml> contains a simple C<YAML> format hash
+describing virtual machines defined within rb3.  While other details are often
+used within various templates, for the purpose of this subcommand, only
+C<hostname> and C<description> are required.  A simplified example could be the
+following:
+
+    ---
+    vms:
+      vm1:
+        hostname: so-much-for-subtlety.oucs.ox.ac.uk
+        description: idp-test staging
+      vm8:
+        hostname: trade-surplus.oucs.ox.ac.uk
+        description: test kdc master
+    ...
 
 =head1 OPTIONS
 

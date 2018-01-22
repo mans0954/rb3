@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.41.2/lib/RB3/CLI/Graph.pm $
-# $LastChangedRevision: 24030 $
-# $LastChangedDate: 2014-06-04 10:34:33 +0100 (Wed, 04 Jun 2014) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.42/lib/RB3/CLI/Graph.pm $
+# $LastChangedRevision: 26284 $
+# $LastChangedDate: 2015-05-13 09:51:40 +0100 (Wed, 13 May 2015) $
 # $LastChangedBy: ouit0139 $
 #
 package RB3::CLI::Graph;
@@ -95,7 +95,7 @@ sub cmd_graph {
         process_file( $config_file, $graph, $copied, $params,
             $template_source, $deep );
         open( $OUTPUT, ">$full_path" );
-        print $OUTPUT $graph->as_canon;
+        print $OUTPUT $graph->as_debug;
         close($OUTPUT);
     }
 }
@@ -106,8 +106,20 @@ sub add_node_and_edge {
     my $source = shift;
     my $colour = shift;
     my $shape  = shift;
-    $graph->add_node( $target, color => $colour, shape => $shape );
-    $graph->add_edge( $source => $target, color => $colour );
+    my $invert = shift;
+    my $rank   = shift;
+    if ($rank) {
+        $graph->add_node( $target, color => $colour, shape => $shape, rank => $rank );
+    }
+    else {
+        $graph->add_node( $target, color => $colour, shape => $shape );
+    }
+    if ($invert == 1) {
+        $graph->add_edge( $target => $source, color => $colour );
+    }
+    else {
+        $graph->add_edge( $source => $target, color => $colour );
+    }
 }
 
 sub process_file {
@@ -118,7 +130,7 @@ sub process_file {
     my $template = shift;
     my $deep     = shift;
 
-    $graph->add_node( $parent, color => $rb3_colour, shape => $rb3_shape );
+    $graph->add_node( $parent, color => $rb3_colour, shape => $rb3_shape, rank => $parent );
     my $PARENT;
     open( $PARENT, "<", $parent );
     while (my $line = <$PARENT>) {
@@ -135,8 +147,6 @@ sub process_file {
             $line =~ s/\t/ /g;
             my @words = split( / /, $line );
             my $file = $words[0];
-            add_node_and_edge( $graph, $file, $parent, $copied_colour,
-                $copied_shape );
             if ( $template == 1 ) {
                 shift @words;
                 while (@words) {
@@ -150,22 +160,30 @@ sub process_file {
                 if ( substr( $words[0], 0, 1 ) eq "!" ) {
                     $words[0] = substr( $words[0], 1 );
                     add_node_and_edge( $graph, $words[0], $file, $yaml_colour,
-                        $yaml_shape );
+                        $yaml_shape, 0 );
                 }
                 else {
-                    process_template( $words[0], $file, $graph, $deep );
+                    process_template( $words[0], $parent, $graph, $deep );
                 }
+                add_node_and_edge( $graph, $file, $words[0], $copied_colour,
+                    $copied_shape, 0, "output" );
+                add_node_and_edge( $graph, $file, $parent, $copied_colour,
+                    $copied_shape, 0, "output" );
+            }
+	    else {
+                add_node_and_edge( $graph, $file, $parent, $copied_colour,
+                    $copied_shape, 0, "output" );
             }
         }
         elsif ( ( substr( $line, 0, 1 ) eq "-" ) && ( $copied == 1 ) ) {
             $line = substr( $line, 1 );
             add_node_and_edge( $graph, $line, $parent, $suppressed_colour,
-                $suppressed_shape );
+                $suppressed_shape, 0, "output" );
         }
         elsif ( ( substr( $line, 0, 1 ) eq "!" ) && ( $yaml == 1 ) ) {
             $line = substr( $line, 1 );
             add_node_and_edge( $graph, $line, $parent, $yaml_colour,
-                $yaml_shape );
+                $yaml_shape, 0, $parent );
         }
         elsif ( substr( $line, 0, 1 ) eq "=" ) {
             $line = substr( $line, 1 );
@@ -180,8 +198,15 @@ sub process_template {
     my $parent   = shift;
     my $graph    = shift;
     my $deep     = shift;
-    add_node_and_edge( $graph, $template, $parent, $template_colour,
-        $template_shape );
+    my $process  = shift;
+    if ($process) {
+      add_node_and_edge( $graph, $template, $parent, $template_colour,
+          $template_shape, 0, "PROCESS" );
+    }
+    else {
+      add_node_and_edge( $graph, $template, $parent, $template_colour,
+          $template_shape, 0, "SRC" );
+    }
     if ( !$deep ) {
         return;
     }
@@ -210,7 +235,7 @@ sub process_template {
         }
         chomp($filename);
         next if ( $filename eq $template );
-        process_template( $filename, $template, $graph, $deep );
+        process_template( $filename, $template, $graph, $deep, 1 );
     }
 }
 

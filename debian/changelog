@@ -1,4 +1,33 @@
-rb3 (1.41.2) UNRELEASED; urgency=low
+rb3 (1.42) stable; urgency=low
+
+  [ Michael Howe ]
+  * RB3::TemplateFunctions:
+    - cache calls to the `hostname` function
+  * RB3::CLI::Build:
+    - remove automatic graphing on system build.  Closes srt#178525
+
+  [ Kristian Kocher ]
+  * output graphs with as_debug instead of as_canon (no pretty print) to avoid
+    using dot in jessie
+  * changed layout:
+    - yml files have the same rank as the rb3 file that includes them
+    - output files are generated from source files and rb3 files
+    - source and output files are in a single column each
+  * added template function to find interfaces from template toolkit files
+  * don't die when reverse resolution fails for an IP address
+
+  [ Dameon Wagner ]
+  * Fix typos in rb3 POD.  Closes srt#189021.
+  * Add subcommand "list-vms", for listing virtual machines that are
+    configured on the host in rb3 (if any).
+  * lib/RB3/CLI/FindInstalled.pm:
+    - Fix query parameter string to hopefully catch all binary packages
+      built from a searched-for source package.
+    - Closes srt#214278.
+
+ -- Michael Howe <michael.howe@it.ox.ac.uk>  Thu, 10 Sep 2015 08:45:17 +0100
+
+rb3 (1.41.2) stable; urgency=low
 
   [ Kristian Kocher ]
   * Use file path and name as node names in graphs
