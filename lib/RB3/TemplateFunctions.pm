@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.28/lib/RB3/TemplateFunctions.pm $
-# $LastChangedRevision: 18559 $
-# $LastChangedDate: 2011-04-21 16:47:01 +0100 (Thu, 21 Apr 2011) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.30/lib/RB3/TemplateFunctions.pm $
+# $LastChangedRevision: 19206 $
+# $LastChangedDate: 2012-01-06 12:19:02 +0000 (Fri, 06 Jan 2012) $
 # $LastChangedBy: dom $
 #
 package RB3::TemplateFunctions;
@@ -61,6 +61,15 @@ sub ip6addr {
     return $addresses[0];
 }
 
+sub ipanyaddrs {
+    my $nam = shift;
+    my @addresses = dnslookup($nam, 'address');
+    unless (@addresses) {
+        die "no address (A, AAAA) records found for $nam";
+    }
+    return @addresses;
+}
+
 sub ip6addr_eok {
     my $addr = shift;
     my $address = eval {
@@ -92,50 +101,82 @@ sub hash {
     my $resolver;
 
     sub dnslookup {
-        my ( $hostname, $type ) = @_;
+        my ($hostname, $type) = @_;
+
         die "no hostname given"
             unless defined $hostname;
-        $resolver ||= Net::DNS::Resolver->new();
+
+        $resolver ||= Net::DNS::Resolver->new;
+
         if ( not( defined $type ) or $type eq 'A' ) {
             my $query = $resolver->query( $hostname, 'A' )
-                or die "Query A records for $hostname: " . $resolver->errorstring;
+                or die "Query A records for $hostname: "
+                    . $resolver->errorstring;
+
             my @results;
             foreach my $rr ( $query->answer ) {
                 if ( ( my $type = $rr->type ) ne 'A' ) {
-                    die "Query A records for $hostname returned unexpected $type record";
+                    die "Query A records for $hostname returned unexpected "
+                        . "$type record";
                 }
                 push @results, $rr->address;
             }
+
             return @results;
-        } elsif ( $type eq 'MX' ) {
+        }
+        elsif ( $type eq 'MX' ) {
             my @mx = mx( $resolver, $hostname )
-                or die "Query MX records for $hostname: " . $resolver->errorstring;
+                or die "Query MX records for $hostname: "
+                    . $resolver->errorstring;
+
             map dnslookup($_->exchange), @mx;
-        } elsif ( $type eq 'PTR' ) {
+        }
+        elsif ( $type eq 'PTR' ) {
             my $query = $resolver->query( $hostname, 'PTR' )
-                or die "Query PTR records for $hostname: " . $resolver->errorstring;
+                or die "Query PTR records for $hostname: "
+                    . $resolver->errorstring;
+
             my @results;
             foreach my $rr ( $query->answer ) {
                 if ( ( my $type = $rr->type ) ne 'PTR') {
-                    die "Query PTR records for $hostname returned unexpected $type record";
+                    die "Query PTR records for $hostname returned unexpected "
+                        . "$type record";
                 }
                 push @results, $rr->ptrdname;
             }
+
             return @results;
-        } elsif ( $type eq 'AAAA' ) {
+        }
+        elsif ( $type eq 'AAAA' ) {
             my $query = $resolver->query( $hostname, 'AAAA' )
-                or die "Query AAAA records for $hostname: " . $resolver->errorstring;
+                or die "Query AAAA records for $hostname: "
+                    . $resolver->errorstring;
+
             my @results;
             foreach my $rr ( $query->answer ) {
                 if ( ( my $type = $rr->type ) ne 'AAAA' ) {
-                    die "Query AAAA records for $hostname returned unexpected $type record";
+                    die "Query AAAA records for $hostname returned "
+                        . "unexpected $type record";
                 }
                 push @results, $rr->address;
             }
+
             return @results;
-        } else {
-                die "Unrecognized type '$type' for DNS lookup\n";
+        }
+        elsif ($type eq 'address') {
+            my @results;
+            for my $type ('A', 'AAAA') {
+                my $query = $resolver->query($hostname, $type);
+                if (defined($query)) {
+                    push @results, map { $_->address } $query->answer;
+                }
             }
+
+            return @results;
+        }
+        else {
+            die "Unrecognized type '$type' for DNS lookup\n";
+        }
     }
 }
 
@@ -164,7 +205,8 @@ The following functions are available:
 
 =item hostname
 
-Takes an IPv4 address and returns a hostname.
+Takes an IPv4 address and returns a hostname, or undef if there is no
+such record in DNS.
 
     [% hostname('127.0.0.1') %]
 
@@ -188,7 +230,7 @@ Takes a netmask and a Net::Netmask 'table' hashref and stores the netmask
 in the table. See storeNetblock in L<Net::Netmask>.
 
     [% SET table = {} %]
-    [% SET store_result = store_netmask_in_table('192.168.1.0/24') %]
+    [% SET store_result = store_netmask_in_table('192.168.1.0/24', table) %]
 
 =item find_netmask_in_table
 
@@ -219,12 +261,25 @@ none exists.
 
     [% ip6addr('dual-stack.example.org') %]
 
+BUG: unlike ipaddr, ip6addr does not support CNAMES (the former
+is implemented using gethostbyname; the latter is implented with AAAA DNS
+lookups.
+
 =item ip6addr_eok
 
 Takes a hostname and returns an IPv6 address. Does not throw an exception
 if none exists.
 
     [% ip6addr_eok('legacy-host.example.org') %]
+
+BUG: unlike ipaddr, ip6addr_eok does not support CNAMES (the former
+is implemented using gethostbyname; the latter is implented with AAAA DNS
+lookups.
+
+=item ipanyaddrs
+
+Takes a hostname and returns one or more IPv4 or IPv6 addresses.  If
+there are zero such addresses in total, an exception is thrown.
 
 =item netblock
 
@@ -333,6 +388,7 @@ our %functions = (
     ipaddr => sub { ipaddr( shift ) },
     ip6addr => sub { ip6addr( shift ) },
     ip6addr_eok => sub { ip6addr_eok( shift ) },
+    ipanyaddrs => sub { [ ipanyaddrs( shift ) ] },
 
     netblock => sub {
         my $netblock = shift;

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.28/bin/rb3 $
-# $LastChangedRevision: 17925 $
-# $LastChangedDate: 2010-12-16 16:54:54 +0000 (Thu, 16 Dec 2010) $
-# $LastChangedBy: dom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.30/bin/rb3 $
+# $LastChangedRevision: 19204 $
+# $LastChangedDate: 2012-01-05 16:21:03 +0000 (Thu, 05 Jan 2012) $
+# $LastChangedBy: worc2070 $
 #
 
 =head1 NAME
@@ -38,6 +38,11 @@ The report includes the source and destination paths, the rb3 file
 that declared this file, and the file owner and mode.
 
 The report is in YAML format.
+
+=head2 list-sources SYSTEM_DIR
+
+List the source files for SYSTEM_DIR.
+The list includes the source templates, rb3 files and yml files.
 
 =head2 dump-params SYSTEM_DIR
 
@@ -122,6 +127,12 @@ Number of build processes to run in parallel.  For good utilisation
 of your hardware, set this to your number of cores or higher.  Default
 value is 1.
 
+=item --[no-]strict
+
+Use Template Toolkit's strict mode for the template processing.
+The default behaviour is currently not to be strict, but the default
+behaviour is likely to change in a future release.
+
 =back
 
 =head1 FORMAT OF REPOSITORY SPECIFICATION FILES
@@ -143,13 +154,31 @@ These lines start with a +.
 They specify that an output file should 
 be generated from an input file.  If the input file's name ends in .tt,
 it is taken to be a Template Toolkit template.  Otherwise, the
-output file is a literal copy of the output file.
+output file is a literal copy of the output file.  The input file's
+name may not contain a ':', and may not start with a '!' or '$' or 0 (zero).
 
 The owner and group owner may optionally be specified, in form OWNER:GROUP.
-The file mode may optionally be specified, in octal.  Optional words
+
+The file mode may optionally be specified, in octal.  Modes whose
+first octal digit is not zero are not currently supported.
+
+Additional file properties can be passed through to any configtool.manifest
+files that are generated, by providing a word in the format c<$NAME=VALUE>.
+For example, a deployer that's compatible with the configtool.manifest
+format could be asked not to try and display diffs for a binary file
+as follows:
+
+  +/srv/web/banner.png img/banner.png $text-encoding=none
+
+See configtool.manifest(5) for the range of additional file
+properties that may be useful.
+
+Optional words
 and the name of the output file may be given in any order.
 
-Example: +/etc/resolv.conf templates/resolv.conf.tt 0464 root:dhcpd
+Example setting mode and user/group ownerships: 
+
+  +/etc/resolv.conf templates/resolv.conf.tt 0464 root:dhcpd
 
 =item Apply Params
 
@@ -243,7 +272,13 @@ and have meanings predefined by the application.
 =item configtool.meta
 
 List of paths in which to place C<configtool.meta>.  Default 
-is /etc/configtool.meta.
+is /etc/configtool.meta.  May use component notation, eg
+C<~/.ctmeta>.
+
+=item configtool.manifest
+
+List of paths in which to place L<configtool.manifest(5)> format
+files.  By default, no configtool.manifest files are produce.
 
 =back
 
@@ -262,6 +297,10 @@ module for a detailed description.
   rb3 find-installed apache2
 
 =head1 SEE ALSO
+
+L<RB3::TemplateFunctions>.
+
+L<configtool.manifest>.
 
 FIXME: link to Ray's paper.  Also need to write user guide and link to that.
 
@@ -287,6 +326,7 @@ $config->define( "configtool_cmd=s" );
 $config->define( "jobs|j=i", { DEFAULT => 1 } );
 $config->define( "cfgdist_server=s" );
 $config->define( "legacy_client=s@" );
+$config->define( "strict" );
 
 $config->file( $RCFILE )
     if -r $RCFILE;
