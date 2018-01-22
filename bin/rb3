@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.36/bin/rb3 $
-# $LastChangedRevision: 19996 $
-# $LastChangedDate: 2012-10-11 20:07:16 +0100 (Thu, 11 Oct 2012) $
-# $LastChangedBy: tom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.37/bin/rb3 $
+# $LastChangedRevision: 21931 $
+# $LastChangedDate: 2013-09-17 11:40:44 +0100 (Tue, 17 Sep 2013) $
+# $LastChangedBy: dom $
 #
 
 =head1 NAME
@@ -87,6 +87,20 @@ This command requires the "basedir" variable to be set, and thus
 does not require your current working directory to be an rb3 
 repository when it is run.
 
+=head2 list-services [SYSTEM_DIR|HOSTNAME]
+
+List the service addresses hosted on the system whose configuration
+is found in SYSTEM_DIR.  Alternatively, the system can be specified by
+HOSTNAME, in which case the system is assumed to be in systems/HOSTNAME within
+"basedir".
+
+Assumes that network interface configuration data is laid out in a 
+particular way in the repository (BUG).
+
+This command requires the "basedir" variable to be set, and thus
+does not require your current working directory to be an rb3 
+repository when it is run.
+
 =head2 update-ssh-keys
 
 Retrieve ssh public keys for managed hosts, reconcile them with
@@ -161,6 +175,8 @@ be generated from an input file.  If the input file's name ends in .tt,
 it is taken to be a Template Toolkit template.  Otherwise, the
 output file is a literal copy of the output file.  The input file's
 name may not contain a ':', and may not start with a '!' or '$' or 0 (zero).
+
+Files generated from templates are currently created as UTF-8.
 
 The owner and group owner may optionally be specified, in form OWNER:GROUP.
 
@@ -264,6 +280,14 @@ Path to the input template file.  An example line in a template is:
 
 Path to the destination file.
 
+=item hostname
+
+If the "hostname" repository variable is set, then the "hostname" packvar
+is equal to that.  Otherwise, it is equal to the name of the (input)
+system directory currently being built.  That is, the directory which
+was specified as an argument to "rb3 build" and which contains a
+"config.rb3" file.
+
 =back
 
 =head1 REPOSITORY VARIABLES
@@ -285,6 +309,23 @@ C<~/.ctmeta>.
 List of paths in which to place L<configtool.manifest(5)> format
 files.  By default, no configtool.manifest files are produce.
 
+=item output_base
+
+Top level directory in which to place output.  By default, output
+is placed in the system directory.  Since the system directory must
+also contain input (it must contain config.rb3 for that system at
+least), some users may wish to use this setting to separate input
+from output.  Subdirectories of output_base, named after each system,
+will be created at build time.
+
+Overridden by output_dir.
+
+=item output_dir
+
+Full path to directory in which to place this system's generated content.
+
+Overrides output_base.
+
 =back
 
 =head1 TEMPLATE FUNCTIONS
@@ -300,6 +341,7 @@ module for a detailed description.
   rb3 build systems/ant.example.org
   rb3 find-iface mx0.example.org
   rb3 find-installed apache2
+  rb3 list-services systems/ant.example.org
 
 =head1 SEE ALSO
 

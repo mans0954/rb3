@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.36/lib/RB3/FileGenerator.pm $
-# $LastChangedRevision: 19698 $
-# $LastChangedDate: 2012-07-12 00:31:21 +0100 (Thu, 12 Jul 2012) $
-# $LastChangedBy: tom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.37/lib/RB3/FileGenerator.pm $
+# $LastChangedRevision: 21931 $
+# $LastChangedDate: 2013-09-17 11:40:44 +0100 (Tue, 17 Sep 2013) $
+# $LastChangedBy: dom $
 #
 package RB3::FileGenerator;
 
@@ -67,7 +67,7 @@ sub InitVMethods {
 
     sub generate {
         my ( $self, $source, $dest, $ctmeta_path, $file_params,
-             $component, $app_config ) = @_;
+             $component, $app_config, $hostname ) = @_;
 
         my $dest_path = $self->repopath($component, $dest );
         my $dest_dir = dirname( $dest_path );
@@ -87,9 +87,15 @@ sub InitVMethods {
             or die "Error opening $source for reading: $!";
 
         if ( $source =~ /\.tt$/ ) {
+            binmode( $tmp, ":utf8" );
+
             my $params = $self->get_params->merge( $file_params )->template_vars;
 
-            my $packvars = { tmpl_source => $source, tmpl_dest => $ctmeta_path };
+            my $packvars = {
+                tmpl_source => $source,
+                tmpl_dest => $ctmeta_path,
+                hostname => $hostname,
+            };
 
             my $tt = $self->Template();
             $self->Template->process( $ifh, { params => $params, packvars => $packvars, %RB3::TemplateFunctions::functions }, $tmp )

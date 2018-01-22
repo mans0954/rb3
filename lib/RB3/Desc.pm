@@ -1,5 +1,5 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.36/lib/RB3/Desc.pm $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.37/lib/RB3/Desc.pm $
 # $LastChangedRevision: 11642 $
 # $LastChangedDate: 2007-11-29 13:40:39 +0000 (Thu, 29 Nov 2007) $
 # $LastChangedBy: ray $

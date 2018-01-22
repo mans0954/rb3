@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.36/lib/RB3/Config.pm $
-# $LastChangedRevision: 19204 $
-# $LastChangedDate: 2012-01-05 16:21:03 +0000 (Thu, 05 Jan 2012) $
-# $LastChangedBy: worc2070 $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.37/lib/RB3/Config.pm $
+# $LastChangedRevision: 21892 $
+# $LastChangedDate: 2013-09-06 15:40:30 +0100 (Fri, 06 Sep 2013) $
+# $LastChangedBy: oucs0173 $
 #
 
 =head1 NAME
@@ -258,7 +258,14 @@ use YAML;
 
         my $file = $self->get_file_list->get_file($path);
         if (defined($file)) {
-            return ($path, $file->get_rb3_source->get_path_stack);
+            my $rb3s = new RB3::RB3File({path => $file->get_rb3_source});
+            my @f = $rb3s->get_path_stack;
+
+            if (@f == 1) {
+                $file = $self->rb3_file_by_path($f[0]);
+                @f = $file->get_path_stack if $file;
+            }
+            return ($path, @f);
         }
         
         $file = $self->rb3_file_by_path($path);

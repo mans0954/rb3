@@ -1,12 +1,13 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.36/lib/RB3/CLI/Build.pm $
-# $LastChangedRevision: 19698 $
-# $LastChangedDate: 2012-07-12 00:31:21 +0100 (Thu, 12 Jul 2012) $
-# $LastChangedBy: tom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.37/lib/RB3/CLI/Build.pm $
+# $LastChangedRevision: 21931 $
+# $LastChangedDate: 2013-09-17 11:40:44 +0100 (Tue, 17 Sep 2013) $
+# $LastChangedBy: dom $
 #
 package RB3::CLI::Build;
 
 use strict;
+
 use warnings FATAL => 'all';
 
 use File::Basename qw( basename dirname );
@@ -110,8 +111,23 @@ sub build_host_config {
 
     $rb3->read_config();
 
+    my $u_outbase = $rb3->get_repovars_list->template_vars->{"output_base"};
+    my $u_outdir = $rb3->get_repovars_list->template_vars->{"output_dir"};
+
+    my $outdir = defined($u_outdir) ? $u_outdir :
+      defined($u_outbase)
+      ? File::Spec->catfile($u_outbase, basename($rb3->get_system_dir))
+      : $rb3->get_system_dir;
+
+
     my $fg = RB3::FileGenerator->new( { params     => $rb3->get_parameter_list,
-                                        system_dir => $rb3->get_system_dir } );
+                                        system_dir => $outdir,
+    } );
+
+    my $u_hostname = $rb3->get_repovars_list->template_vars->{"hostname"};
+    my $hostname = defined($u_hostname)
+      ? $u_hostname
+      : basename($rb3->get_system_dir);
 
     foreach my $file ( @{ $rb3->get_file_list } ) {
         my $source = $file->get_source
@@ -120,7 +136,8 @@ sub build_host_config {
         eval {
             $fg->generate( 
                 $source, $file->get_dest, $file->get_ctmeta_path, 
-                $file->get_parameter_list, $file->get_component, $app_config
+                $file->get_parameter_list, $file->get_component, $app_config,
+                $hostname,
             );
         };
         if ($@) {
