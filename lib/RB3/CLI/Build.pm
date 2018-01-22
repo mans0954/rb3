@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.41.2/lib/RB3/CLI/Build.pm $
-# $LastChangedRevision: 23775 $
-# $LastChangedDate: 2014-05-13 11:22:34 +0100 (Tue, 13 May 2014) $
-# $LastChangedBy: ouit0139 $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.42/lib/RB3/CLI/Build.pm $
+# $LastChangedRevision: 26904 $
+# $LastChangedDate: 2015-09-10 08:49:03 +0100 (Thu, 10 Sep 2015) $
+# $LastChangedBy: worc2070 $
 #
 package RB3::CLI::Build;
 
@@ -153,7 +153,6 @@ sub build_host_config {
 
     write_configtool_meta($rb3, $fg, $app_config);
     write_configtool_manifests($rb3, $fg, $app_config);
-    RB3::CLI::Graph::cmd_graph(undef, $app_config, $hostdir);
 }
 
 sub write_configtool_meta {

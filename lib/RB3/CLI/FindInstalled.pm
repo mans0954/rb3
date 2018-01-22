@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.41.2/lib/RB3/CLI/FindInstalled.pm $
-# $LastChangedRevision: 11642 $
-# $LastChangedDate: 2007-11-29 13:40:39 +0000 (Thu, 29 Nov 2007) $
-# $LastChangedBy: ray $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.42/lib/RB3/CLI/FindInstalled.pm $
+# $LastChangedRevision: 26838 $
+# $LastChangedDate: 2015-08-27 12:54:26 +0100 (Thu, 27 Aug 2015) $
+# $LastChangedBy: oucs0146 $
 #
 package RB3::CLI::FindInstalled;
 
@@ -14,7 +14,7 @@ use RB3::Desc;
 use Readonly;
 
 Readonly my @SSH_CMD     => qw( ssh -oConnectTimeout=5 -oBatchMode=yes );
-Readonly my $GREP_STATUS => "grep-status -FStatus -r ^install -a -FPackage,Source -X %s -sPackage,Version";
+Readonly my $GREP_STATUS => "grep-status -FStatus -r ^install -a -FPackage,Source -e '^%s( ?\\(.*\\))?\$' -sPackage,Version";
 
 sub cmd_find_installed {
     my $class = shift;

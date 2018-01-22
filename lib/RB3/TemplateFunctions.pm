@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.41.2/lib/RB3/TemplateFunctions.pm $
-# $LastChangedRevision: 19699 $
-# $LastChangedDate: 2012-07-12 00:46:23 +0100 (Thu, 12 Jul 2012) $
-# $LastChangedBy: tom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.42/lib/RB3/TemplateFunctions.pm $
+# $LastChangedRevision: 26315 $
+# $LastChangedDate: 2015-05-19 10:56:18 +0100 (Tue, 19 May 2015) $
+# $LastChangedBy: ouit0139 $
 #
 package RB3::TemplateFunctions;
 
@@ -19,6 +19,7 @@ available via template variables.
 
 use strict;
 use warnings FATAL => 'all';
+use feature 'state';
 
 use Carp;
 use File::Basename;
@@ -32,6 +33,8 @@ use Readonly;
 use Socket qw(inet_ntoa inet_aton AF_INET);
 use Sort::Fields ();
 use Data::Dumper;
+
+use RB3::Interface;
 
 sub contains {
     my ( $list_ref, $wanted ) = @_;
@@ -49,7 +52,7 @@ sub ipaddr {
     my @res = gethostbyname( $addr )
         or Carp::confess "gethostbyname $addr failed";
     @res == 5
-        or die "more than one address for $addr";
+        or croak "more than one address for $addr";
     return inet_ntoa( $res[4] );
 }
 
@@ -57,12 +60,17 @@ sub ip6addr {
     my $addr = shift;
 
     my $aaaaddress = ip6addr_eok($addr);
-    die "No AAAA records returned for ip6addr of $addr"
+    croak "No AAAA records returned for ip6addr of $addr"
         unless $aaaaddress;
     return $aaaaddress;
 }
 
+sub find_iface {
+    my $hostname = shift
+        or die "hostname not specified";
 
+    return RB3::Interface::parse_interfaces($hostname, "systems");
+}
 
 # <http://cboard.cprogramming.com/c-programming/109269-hash-function-translated-cplusplus.html>
 # Should create a tiny CPAN module with this in?
@@ -86,20 +94,20 @@ sub hash {
     sub dnslookup {
         my ($hostname, $type) = @_;
 
-        die "no hostname given"
+        croak "no hostname given"
             unless defined $hostname;
 
         $resolver ||= Net::DNS::Resolver->new;
 
         if ( not( defined $type ) or $type eq 'A' ) {
             my $query = $resolver->query( $hostname, 'A' )
-                or die "Query A records for $hostname: "
+                or croak "Query A records for $hostname: "
                     . $resolver->errorstring . "\n";
 
             my @results;
             foreach my $rr ( $query->answer ) {
                 if ( ( my $type = $rr->type ) ne 'A' ) {
-                    die "Query A records for $hostname returned unexpected "
+                    croak "Query A records for $hostname returned unexpected "
                         . "$type record";
                 }
                 push @results, $rr->address;
@@ -109,20 +117,20 @@ sub hash {
         }
         elsif ( $type eq 'MX' ) {
             my @mx = mx( $resolver, $hostname )
-                or die "Query MX records for $hostname: "
+                or croak "Query MX records for $hostname: "
                     . $resolver->errorstring;
 
             map dnslookup($_->exchange), @mx;
         }
         elsif ( $type eq 'PTR' ) {
             my $query = $resolver->query( $hostname, 'PTR' )
-                or die "Query PTR records for $hostname: "
+                or croak "Query PTR records for $hostname: "
                     . $resolver->errorstring;
 
             my @results;
             foreach my $rr ( $query->answer ) {
                 if ( ( my $type = $rr->type ) ne 'PTR') {
-                    die "Query PTR records for $hostname returned unexpected "
+                    croak "Query PTR records for $hostname returned unexpected "
                         . "$type record";
                 }
                 push @results, $rr->ptrdname;
@@ -132,13 +140,13 @@ sub hash {
         }
         elsif ( $type eq 'AAAA' ) {
             my $query = $resolver->query( $hostname, 'AAAA' )
-                or die "Query AAAA records for $hostname: "
+                or croak "Query AAAA records for $hostname: "
                     . $resolver->errorstring;
 
             my @results;
             foreach my $rr ( $query->answer ) {
                 if ( ( my $type = $rr->type ) ne 'AAAA' ) {
-                    die "Query AAAA records for $hostname returned "
+                    croak "Query AAAA records for $hostname returned "
                         . "unexpected $type record";
                 }
                 push @results, $rr->address;
@@ -158,7 +166,7 @@ sub hash {
             return @results;
         }
         else {
-            die "Unrecognized type '$type' for DNS lookup\n";
+            croak "Unrecognized type '$type' for DNS lookup\n";
         }
     }
 
@@ -178,7 +186,7 @@ sub hash {
         }
 
         unless (@addresses) {
-            die "no address (A, AAAA) records found for $nam";
+            croak "no address (A, AAAA) records found for $nam";
         }
 
         return @addresses;
@@ -209,12 +217,26 @@ sub hash {
             return $aaaa[0]->address;
         }
         elsif (@aaaa > 1) {
-            die "More than one AAAA returned for ip6addr_eok($name)\n";
+            croak "More than one AAAA returned for ip6addr_eok($name)\n";
         }
 
-        die 'rb3: internal error: number of elements in @aaaa is '
+        croak 'rb3: internal error: number of elements in @aaaa is '
             . scalar(@aaaa);
     }
+}
+
+sub hostname {
+    my $host = shift;
+    state %cache;
+
+    unless( $cache{$host}->{lookedup} ){
+        my $addr = inet_aton($host);
+        $cache{$host} = {
+            lookedup => 1,
+            result => scalar gethostbyaddr( $addr, AF_INET ),
+        };
+    } 
+    return $cache{$host}->{result};
 }
 
 sub store_netmask_in_table {
@@ -451,11 +473,7 @@ arguments; rather, it is the subject of the vmethod call.
 =cut
 
 our %functions = (
-    hostname => sub {
-        my $addr = inet_aton(shift);
-        scalar gethostbyaddr( $addr, AF_INET );
-    },
-
+    hostname => \&hostname,
     dnslookup => \&dnslookup,
     store_netmask_in_table => \&store_netmask_in_table,
     find_netmask_in_table => \&find_netmask_in_table,
@@ -469,6 +487,8 @@ our %functions = (
     is_ipv4 => sub { NetAddr::IP->new($_[0])->version == 4 },
     is_ipv6 => sub { NetAddr::IP->new($_[0])->version == 6 },
 
+    find_iface => sub { find_iface( shift ) },
+    
     netblock => sub {
         my $netblock = shift;
         if ($netblock eq 'any') {

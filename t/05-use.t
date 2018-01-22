@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.41.2/t/05-use.t $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.42/t/05-use.t $
 # $LastChangedRevision: 11523 $
 # $LastChangedDate: 2007-11-20 14:29:06 +0000 (Tue, 20 Nov 2007) $
 # $LastChangedBy: ray $
