@@ -1,3 +1,49 @@
+rb3 (1.34) unstable; urgency=low
+
+  * Print a nicer error report when a template fails to build.  It now
+    contains the input and output file names, and the system for which
+    it failed, in addition to the error message as previously.  The
+    line of the template file causing the error still isn't printed.
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Tue, 10 Jul 2012 21:34:20 +0100
+
+rb3 (1.33) unstable; urgency=low
+
+  * ipanyaddrs can now cope with CNAMEs.
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Mon, 28 May 2012 17:50:09 +0100
+
+rb3 (1.32) unstable; urgency=low
+
+  [ Krzysztof Ilowiecki ]
+  * Make ip6addr() use Tom's new ip6addr_eok() implementation,
+    with its benefits
+
+  [ Tom Jones ]
+  * Make ip6addr_eok() run without error when it's given something
+    that looks like an IPv4 address as input.
+  * Fix ip6addr_eok() bug where it didn't work with CNAMEs.
+  * Specify that it's an error for ip6addr and ip6addr_eok() template
+    functions to be called on a name that resolves to more than one address.
+
+ -- Krzysztof Ilowiecki <krymzon@injury-time.oucs.ox.ac.uk>  Thu, 03 May 2012 12:43:45 +0100
+
+rb3 (1.31) unstable; urgency=low
+
+  [Michael Howe]
+  * Modified RB3::FindIface to also find based on 'up ip addr add'-syntax, as
+    I use that elsewhere.
+
+  [Tom Jones]
+  * In RB3::TemplateFunctions, use terms that make more sense from the
+    interface consumer's point of view (srt#76949).
+  * Add SEE ALSO reference to Template::Manual::Variables.
+  * Add is_ipv4 and is_ipv6 template functions.
+  * Better document ipaddr() by stating that it can take an IPv4 address
+    as input.
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Thu, 26 Apr 2012 17:23:51 +0100
+
 rb3 (1.30) unstable; urgency=low
 
   [ Tom Jones ]

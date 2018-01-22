@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.30/lib/RB3/TemplateFunctions.pm $
-# $LastChangedRevision: 19206 $
-# $LastChangedDate: 2012-01-06 12:19:02 +0000 (Fri, 06 Jan 2012) $
-# $LastChangedBy: dom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.34/lib/RB3/TemplateFunctions.pm $
+# $LastChangedRevision: 19694 $
+# $LastChangedDate: 2012-07-10 21:36:55 +0100 (Tue, 10 Jul 2012) $
+# $LastChangedBy: tom $
 #
 package RB3::TemplateFunctions;
 
@@ -12,8 +12,8 @@ RB3::TemplateFunctions - functions imported into Template Toolkit namespace
 
 =head1 DESCRIPTION
 
-This module defines additional functions which are imported into the
-Template Toolkit namespace.
+The following subroutines are
+available via template variables.
 
 =cut
 
@@ -55,31 +55,14 @@ sub ipaddr {
 
 sub ip6addr {
     my $addr = shift;
-    my @addresses = dnslookup($addr, 'AAAA');
-    die "More than one AAAA returned for ip6addr"
-        unless scalar @addresses == 1;
-    return $addresses[0];
+
+    my $aaaaddress = ip6addr_eok($addr);
+    die "No AAAA records returned for ip6addr of $addr"
+        unless $aaaaddress;
+    return $aaaaddress;
 }
 
-sub ipanyaddrs {
-    my $nam = shift;
-    my @addresses = dnslookup($nam, 'address');
-    unless (@addresses) {
-        die "no address (A, AAAA) records found for $nam";
-    }
-    return @addresses;
-}
 
-sub ip6addr_eok {
-    my $addr = shift;
-    my $address = eval {
-        ip6addr($addr);
-    };
-    if ($@) {
-        die $@ unless $@ =~ /NOERROR/;
-    }
-    return $address;
-}
 
 # <http://cboard.cprogramming.com/c-programming/109269-hash-function-translated-cplusplus.html>
 # Should create a tiny CPAN module with this in?
@@ -111,7 +94,7 @@ sub hash {
         if ( not( defined $type ) or $type eq 'A' ) {
             my $query = $resolver->query( $hostname, 'A' )
                 or die "Query A records for $hostname: "
-                    . $resolver->errorstring;
+                    . $resolver->errorstring . "\n";
 
             my @results;
             foreach my $rr ( $query->answer ) {
@@ -177,6 +160,60 @@ sub hash {
         else {
             die "Unrecognized type '$type' for DNS lookup\n";
         }
+    }
+
+    sub ipanyaddrs {
+        my $nam = shift;
+
+        $resolver ||= Net::DNS::Resolver->new;
+
+        my @addresses;
+        for my $rectyp (qw(A AAAA)) {
+            my $query = $resolver->query($nam, $rectyp);
+
+            if (defined($query)) {
+                my @righttype = grep { $_->type eq $rectyp } $query->answer;
+                push(@addresses, map { $_->address } @righttype);
+            }
+        }
+
+        unless (@addresses) {
+            die "no address (A, AAAA) records found for $nam";
+        }
+
+        return @addresses;
+    }
+
+
+    sub ip6addr_eok {
+        my $name = shift;
+
+        $resolver ||= Net::DNS::Resolver->new;
+
+        # From Net::DNS(3pm): Returns a "Net::DNS::Packet" object, or 
+        # "undef" if no answers were found
+        my $query = $resolver->query($name, 'AAAA');
+        defined $query or return;
+
+        my @aaaa = grep { $_->type eq 'AAAA' } $query->answer;
+
+        if (@aaaa == 0) {
+            # Could still happen if there were results but none were AAAA,
+            # which can happen because apparently "If the name looks like 
+            # an IP address (IPv4 or IPv6), then an appropriate PTR query 
+            # will be performed."  Even if we've specified a record type?
+            # Weird.  But at least it's documented in Net::DNS(3pm).
+            return;
+        }
+        elsif (@aaaa == 1) {
+            return $aaaa[0]->address;
+        }
+        elsif (@aaaa > 1) {
+            die "More than one AAAA returned for ip6addr_eok($name)\n";
+        }
+
+        die 'rb3: internal error: number of elements in @aaaa is '
+            . scalar(@aaaa);
     }
 }
 
@@ -250,36 +287,40 @@ the IPv6 addresses before comparing them.
 
 =item ipaddr
 
-Takes a hostname and returns an IPv4 address
+Takes a hostname or IPv4 address and returns an IPv4 address.
 
     [% ipaddr('localhost') %]
 
 =item ip6addr
 
 Takes a hostname and returns an IPv6 address. Throws an exception if
-none exists.
+none exists, or if more than one exists.  Note that, unlike ipaddr, 
+it is an error to supply an
+IPv6 address as input to this function.
 
     [% ip6addr('dual-stack.example.org') %]
-
-BUG: unlike ipaddr, ip6addr does not support CNAMES (the former
-is implemented using gethostbyname; the latter is implented with AAAA DNS
-lookups.
 
 =item ip6addr_eok
 
 Takes a hostname and returns an IPv6 address. Does not throw an exception
-if none exists.
+if none exists.  Throws an exception if more than one exists.
 
     [% ip6addr_eok('legacy-host.example.org') %]
 
-BUG: unlike ipaddr, ip6addr_eok does not support CNAMES (the former
-is implemented using gethostbyname; the latter is implented with AAAA DNS
-lookups.
-
-=item ipanyaddrs
+=item ipanyaddrs(dnsname)
 
 Takes a hostname and returns one or more IPv4 or IPv6 addresses.  If
 there are zero such addresses in total, an exception is thrown.
+
+=item is_ipv4(addr)
+
+Returns true if addr is a string representation of an IPv4 address, or
+false otherwise.
+
+=item is_ipv6(addr)
+
+Returns true if addr is a string representation of an IPv6 address, or
+false otherwise.
 
 =item netblock
 
@@ -390,6 +431,9 @@ our %functions = (
     ip6addr_eok => sub { ip6addr_eok( shift ) },
     ipanyaddrs => sub { [ ipanyaddrs( shift ) ] },
 
+    is_ipv4 => sub { NetAddr::IP->new($_[0])->version == 4 },
+    is_ipv6 => sub { NetAddr::IP->new($_[0])->version == 6 },
+
     netblock => sub {
         my $netblock = shift;
         if ($netblock eq 'any') {
@@ -476,7 +520,7 @@ our %functions = (
 
 =head1 SEE ALSO
 
-L<rb3(1)>
+L<rb3(1)>, L<Template::Manual::Variables(3pm)>
 
 =cut
 
