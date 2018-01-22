@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.26/bin/rb3 $
-# $LastChangedRevision: 17889 $
-# $LastChangedDate: 2010-12-08 18:37:37 +0000 (Wed, 08 Dec 2010) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.27/bin/rb3 $
+# $LastChangedRevision: 17925 $
+# $LastChangedDate: 2010-12-16 16:54:54 +0000 (Thu, 16 Dec 2010) $
 # $LastChangedBy: dom $
 #
 
 =head1 NAME
 
-rb3
+rb3 - Configuration repository builder
 
 =head1 SYNOPSIS
 
@@ -215,13 +215,16 @@ These are passed from the application to the templates via
 the C<packvars> namespace.  For
 example, C<tmpl_source> is available from C<packvars.tmpl_source>.
 
+Note that these variables were previously available under the C<params>
+namespace.
+
 =over 4
 
 =item tmpl_source
 
 Path to the input template file.  An example line in a template is:
 
-    # Generated from [% params.tmpl_source %]
+    # Generated from [% packvars.tmpl_source %]
 
 =item tmpl_dest
 
