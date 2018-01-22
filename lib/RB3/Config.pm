@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.26/lib/RB3/Config.pm $
-# $LastChangedRevision: 17648 $
-# $LastChangedDate: 2010-10-05 23:12:33 +0100 (Tue, 05 Oct 2010) $
-# $LastChangedBy: tom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.27/lib/RB3/Config.pm $
+# $LastChangedRevision: 17932 $
+# $LastChangedDate: 2010-12-17 10:56:14 +0000 (Fri, 17 Dec 2010) $
+# $LastChangedBy: dom $
 #
 package RB3::Config;
 
@@ -125,7 +125,7 @@ use YAML;
             if ( s{^\+}{} ) {
                 my $args = parse_add_args( split );
 
-                $args->{ rb3_source } = $rb3;
+                $args->{ rb3_source } = $rb3->path;
                 $self->get_file_list->add_file( RB3::File->new( $args ) );
             }
             elsif ( s{^\-/?}{} ) {

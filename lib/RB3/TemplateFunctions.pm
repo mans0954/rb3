@@ -1,5 +1,5 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.26/lib/RB3/TemplateFunctions.pm $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.27/lib/RB3/TemplateFunctions.pm $
 # $LastChangedRevision: 17888 $
 # $LastChangedDate: 2010-12-08 18:32:02 +0000 (Wed, 08 Dec 2010) $
 # $LastChangedBy: dom $
