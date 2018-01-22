@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/trunk/lib/RB3/File.pm $
-# $LastChangedRevision: 13833 $
-# $LastChangedDate: 2008-05-22 14:47:16 +0100 (Thu, 22 May 2008) $
-# $LastChangedBy: dom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.25/lib/RB3/File.pm $
+# $LastChangedRevision: 16182 $
+# $LastChangedDate: 2009-09-16 18:01:52 +0100 (Wed, 16 Sep 2009) $
+# $LastChangedBy: tom $
 #
 package RB3::File;
 
@@ -14,6 +14,8 @@ use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata( DefaultOwner => 'root' );
 __PACKAGE__->mk_classdata( DefaultGroup => 'root' );
 __PACKAGE__->mk_classdata( DefaultMode  => '0444' );
+__PACKAGE__->mk_classdata( DefaultComponent => 'root' );
+__PACKAGE__->mk_classdata( DefaultNotation  => '/' );
 
 use Class::Std;
 use RB3::ParameterList;
@@ -26,6 +28,8 @@ use RB3::ParameterList;
     my %group_of      :ATTR( :get<group>                   );
     my %mode_of       :ATTR( :get<mode>                    );
     my %params_of     :ATTR( :get<parameter_list>          );
+    my %component_of  :ATTR( :get<component>               );
+    my %notation_of   :ATTR( :get<notation>                );
 
     sub BUILD {
         my ( $self, $obj_id, $arg_ref ) = @_;
@@ -41,12 +45,16 @@ use RB3::ParameterList;
 
         $mode_of{ $obj_id } = defined( $arg_ref->{ mode } ) ? $arg_ref->{ mode }
                                                             : __PACKAGE__->DefaultMode();
+        $component_of{ $obj_id } = defined( $arg_ref->{ component } ) ? $arg_ref->{ component }
+                                                                      : __PACKAGE__->DefaultComponent();
+        $notation_of{ $obj_id } = defined( $arg_ref->{ notation } ) ? $arg_ref->{ notation }
+                                                                      : __PACKAGE__->DefaultNotation();
     }
 
     sub as_hash : HASHIFY {
         my $self = shift;
         my %h;
-        foreach my $k ( qw( dest source owner group mode rb3_source ) ) {
+        foreach my $k ( qw( dest source owner group mode rb3_source component ) ) {
             my $accessor = "get_$k";
             $h{ $k } = $self->$accessor();
         }
@@ -55,6 +63,11 @@ use RB3::ParameterList;
             $h{ params } = { map { $_->get_name => $_->as_hash } @$params };
         }
         return \%h;
+    }
+
+    sub get_ctmeta_path {
+        my $self = shift;
+        return File::Spec->catdir($self->get_notation, $self->get_dest);
     }
 }
 

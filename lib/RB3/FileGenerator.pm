@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/trunk/lib/RB3/FileGenerator.pm $
-# $LastChangedRevision: 15812 $
-# $LastChangedDate: 2009-07-06 11:49:15 +0100 (Mon, 06 Jul 2009) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.25/lib/RB3/FileGenerator.pm $
+# $LastChangedRevision: 16972 $
+# $LastChangedDate: 2010-02-12 12:28:25 +0000 (Fri, 12 Feb 2010) $
 # $LastChangedBy: tom $
 #
 package RB3::FileGenerator;
@@ -11,7 +11,6 @@ use warnings FATAL => 'all';
 
 use base 'Class::Data::Inheritable';
 
-__PACKAGE__->mk_classdata( BaseDir => undef );
 __PACKAGE__->mk_classdata( DryRun  => 0     );
 __PACKAGE__->mk_classdata( Quiet   => 0     );
 __PACKAGE__->mk_classdata( Silent  => 0     );
@@ -28,18 +27,10 @@ use Template::Stash;
 
 sub InitVMethods {
     my $class = shift;
-    $class->DisableShuffle();
+
     Template::Stash->define_vmethod( 'scalar', 'lc', sub { lc $_[0] } );
     Template::Stash->define_vmethod( 'list', 'contains', \&RB3::TemplateFunctions::contains );
     Template::Stash->define_vmethod( 'list', 'fieldsort', \&RB3::TemplateFunctions::fieldsort );
-}
-
-sub EnableShuffle {
-    Template::Stash->define_vmethod( 'list', 'shuffle', \&RB3::TemplateFunctions::shuffle );
-}
-
-sub DisableShuffle {
-    Template::Stash::->define_vmethod( 'list', 'shuffle', \&RB3::TemplateFunctions::die_shuffle );
 }
 
 {
@@ -47,7 +38,7 @@ sub DisableShuffle {
 
     sub Template {
         unless ( $tt ) {
-            $tt = Template->new( { INCLUDE_PATH => __PACKAGE__->BaseDir } );
+            $tt = Template->new( { INCLUDE_PATH => '.' } );
         }
         return $tt;
     }
@@ -59,17 +50,13 @@ sub DisableShuffle {
     my %system_dir_of :ATTR( :init_arg<system_dir> :get<system_dir> );
 
     sub generate {
-        my ( $self, $source, $dest, $file_params ) = @_;
-
-        my $source_path = File::Spec->catfile( $self->BaseDir, $source );
-
-        my $component = $dest =~ s{^([^:/]+):/}{} ? $1 : 'root';
+        my ( $self, $source, $dest, $ctmeta_path, $file_params, $component ) = @_;
 
         my $dest_path = File::Spec->catfile( $self->get_system_dir, $component, $dest );
         my $dest_dir = dirname( $dest_path );
-        my $dest_relpath = File::Spec->abs2rel( $dest_path, $self->BaseDir );
+#        my $dest_relpath = File::Spec->abs2rel( $dest_path, "." );
 
-        warn "Generating $dest_relpath\n      from $source\n"
+        warn "Generating $dest_path\n      from $source\n"
             unless $self->Quiet;
 
         return
@@ -79,39 +66,26 @@ sub DisableShuffle {
 
         my $tmp = File::Temp->new( DIR => $dest_dir, UNLINK => 1 );
 
-        eval {
-            my $ifh = IO::File->new( $source_path, O_RDONLY )
-                or die "Error opening $source_path for reading: $!";
+        my $ifh = IO::File->new( $source, O_RDONLY )
+            or die "Error opening $source for reading: $!";
 
-            if ( $source =~ /\.tt$/ ) {
-                my $params = $self->get_params->merge( $file_params )->template_vars;
-                $params->{ tmpl_source } = $source;
-                $params->{ tmpl_dest }   = "/$dest";
-                my $tt = $self->Template();
-                $self->Template->process( $ifh, { params => $params, %RB3::TemplateFunctions::functions }, $tmp )
-                    or die $self->Template->error() . "\n";
-            }
-            else {
-                while ( <$ifh> ) {
-                    $tmp->print( $_ )
-                        or die "Error writing to " . $tmp->filename . ": $!";
-                }
-            }
-            $ifh->close();
-            $tmp->close();
-        };
-        if ( $@ ) {
-            if ( $@ =~ /Shuffle not enabled/ ) {
-                warn "  skipping $dest: shuffle not enabled\n"
-                    unless $self->Silent;
-#                die  "  Missing $dest"
-#                    if ! -f $dest_path && $options{diemissing};
-                return;
-            }
-            else {
-                die $@;
+        if ( $source =~ /\.tt$/ ) {
+            my $params = $self->get_params->merge( $file_params )->template_vars;
+
+            my $packvars = { tmpl_source => $source, tmpl_dest => $ctmeta_path };
+
+            my $tt = $self->Template();
+            $self->Template->process( $ifh, { params => $params, packvars => $packvars, %RB3::TemplateFunctions::functions }, $tmp )
+                or die $self->Template->error() . "\n";
+        }
+        else {
+            while ( <$ifh> ) {
+                $tmp->print( $_ )
+                    or die "Error writing to " . $tmp->filename . ": $!";
             }
         }
+        $ifh->close();
+        $tmp->close();
 
         rename( $tmp->filename, $dest_path )
             or die "Error renaming " . $tmp->filename . " to $dest_path: $!";

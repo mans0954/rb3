@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/trunk/lib/RB3/CLI/UpdateSSHKeys.pm $
-# $LastChangedRevision: 13373 $
-# $LastChangedDate: 2008-03-19 16:31:40 +0000 (Wed, 19 Mar 2008) $
-# $LastChangedBy: ray $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.25/lib/RB3/CLI/UpdateSSHKeys.pm $
+# $LastChangedRevision: 16162 $
+# $LastChangedDate: 2009-09-11 17:50:45 +0100 (Fri, 11 Sep 2009) $
+# $LastChangedBy: tom $
 #
 package RB3::CLI::UpdateSSHKeys;
 
@@ -25,7 +25,7 @@ sub cmd_update_ssh_keys {
     my $class = shift;
     my $app_config = shift;
 
-    my $dir = File::Spec->catdir( $app_config->basedir, 'defaults', 'ssh_keys' );
+    my $dir = File::Spec->catdir( 'defaults', 'ssh_keys' );
     chdir( $dir )
         or die "chdir $dir: $!";
 

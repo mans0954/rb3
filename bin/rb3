@@ -1,14 +1,253 @@
 #!/usr/bin/perl
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/trunk/bin/rb3 $
-# $LastChangedRevision: 16026 $
-# $LastChangedDate: 2009-08-06 16:51:34 +0100 (Thu, 06 Aug 2009) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.25/bin/rb3 $
+# $LastChangedRevision: 16972 $
+# $LastChangedDate: 2010-02-12 12:28:25 +0000 (Fri, 12 Feb 2010) $
 # $LastChangedBy: tom $
 #
 
+=head1 NAME
+
+rb3
+
+=head1 SYNOPSIS
+
+rb3 [OPTIONS] COMMAND COMMAND_ARGS
+
+=head1 DESCRIPTION
+
+rb3 is a configuration repository builder.  It uses a simple
+combination of YAML data files and Template Toolkit templates
+to generate configuration files for hosts.  It is usually used
+in conjunction with a revision control system (example: git), 
+and a mechanism to deploy the generated configuration files
+(example: configtool).
+
+=head1 COMMANDS
+
+=head2 build SYSTEM_DIR [...]
+
+Build the system directories given as arguments.  For each system
+directory, a repository specification file called "config.rb3"
+must exist in that directory (see FORMAT OF REPOSITORY SPECIFICATION FILES)
+
+=head2 dump-files SYSTEM_DIR
+
+Report on the destination files for SYSTEM_DIR.
+The report includes the source and destination paths, the rb3 file
+that declared this file, and the file owner and mode.
+
+The report is in YAML format.
+
+=head2 dump-params SYSTEM_DIR
+
+Report on the content of the "params" data structure for SYSTEM_DIR.
+
+The report is in YAML format.
+
+=head2 find-installed PACKAGE
+
+For the package name given as an argument, display a list of hosts
+with that package installed, along with version information.
+
+Assumes that managed hosts are running Debian and are accessible over ssh.
+
+Assumes that contactable hosts are flagged in a particular way in
+the repository (BUG).
+
+This command requires the "basedir" variable to be set, and thus
+does not require your current working directory to be an rb3 
+repository when it is run.
+
+=head2 find-iface ADDRESS
+
+For the DNS hostname or IP address given as an argument, display
+a list of hosts (usually one) configured for that address.
+
+Assumes that network interface configuration data is laid out in a 
+particular way in the repository (BUG).
+
+This command requires the "basedir" variable to be set, and thus
+does not require your current working directory to be an rb3 
+repository when it is run.
+
+=head2 update-ssh-keys
+
+Retrieve ssh public keys for managed hosts, reconcile them with
+the known fingerprints data, and store them in the repository.
+
+Assumes that subversion is used as the revision control system (BUG).
+
+=head1 OPTIONS
+
+All options are also settable with lines in C<~/.rb3rc> of the
+form C<NAME = VALUE>.  The NAMEs do not include the leading dashes.
+Example: C<basedir = ~/rb3>.
+
+=over 4
+
+=item --basedir DIR
+
+rb3 commands that perform read-only queries, such as "find-installed"
+and "find-iface", do not have to be run with an rb3 repository as
+their current working
+directory.  Instead, they locate the repository via the basedir variable.
+
+=item --dry-run
+
+FIXME
+
+=item --[no-]quiet
+
+Suppress chatter about every file that's generated.
+
+=item --[no-]silent
+
+Only errors are reported to the user.
+
+=item --jobs,-j JOBS
+
+Number of build processes to run in parallel.  For good utilisation
+of your hardware, set this to your number of cores or higher.  Default
+value is 1.
+
+=back
+
+=head1 FORMAT OF REPOSITORY SPECIFICATION FILES
+
+By convention, repository specification files are named *.rb3.
+They are line-orientated.  Each line may be a comment line or a
+directive.  Comment lines start with a #.  There are five types
+of directive; the first character in the line defines the type of
+directive.
+
+=head2 DIRECTIVES
+
+=over 4
+
+=item Generate File
+
+These lines start with a +.  
+
+They specify that an output file should 
+be generated from an input file.  If the input file's name ends in .tt,
+it is taken to be a Template Toolkit template.  Otherwise, the
+output file is a literal copy of the output file.
+
+The owner and group owner may optionally be specified, in form OWNER:GROUP.
+The file mode may optionally be specified, in octal.  Optional words
+and the name of the output file may be given in any order.
+
+Example: +/etc/resolv.conf templates/resolv.conf.tt 0464 root:dhcpd
+
+=item Apply Params
+
+These lines start with a !.
+
+The contents of the 
+referenced file must be a YAML document, where the top-level node
+is a YAML Mapping.  The keys and values of this mapping become available in
+the templates as the keys and values of the "params" hash.
+
+If two params files both specify the value for a particular key, the
+file that was referenced last wins.  It is not possible to merge or
+otherwise combine different values for the same key.
+
+Example: !data/resolvers.yml
+
+=item Include Another Repository Specification File
+
+These lines start with a =.
+
+They specify the path of a file, in the same format as this one, to
+include here.  Inclusions may be nested arbitrarily deep.
+
+Example: =rb3_conf/webserver.rb3
+
+=item Apply YAML Data for Repository Variables
+
+These lines start with a :.
+
+These files are processed in a similar way to the params files, but
+their data does not end up in the params namespace for templates.  Instead,
+this data is visible to the rb3 application.  All key names supplied
+in this way must have a pre-defined meaning in the rb3 application (see
+section "Repository Variables".
+
+Example: :systems/foo.example.org/repovars.yml
+
+=item Suppress
+
+These lines start with a -.
+
+This suppresses generation of the given output file for this system.
+
+Use of this type of directive usually indicates that the repository 
+specification would
+benefit from some refactoring.
+
+Example:
+
+    \=rb3specs/dns_cache.rb3
+    # this system is the odd one out
+    -/etc/named.conf
+
+=back
+
+=head1 CONFIGURATION
+
+See OPTIONS.
+
+=head1 PACKAGE VARIABLES
+
+These are passed from the application to the templates via
+the C<packvars> namespace.  For
+example, C<tmpl_source> is available from C<packvars.tmpl_source>.
+
+=over 4
+
+=item tmpl_source
+
+Path to the input template file.  An example line in a template is:
+
+    # Generated from [% params.tmpl_source %]
+
+=item tmpl_dest
+
+Path to the destination file.
+
+=back
+
+=head1 REPOSITORY VARIABLES
+
+These are defined in the repository in 
+YAML files included via C<:> lines in the rb3 files,
+and have meanings predefined by the application.
+
+=over 4
+
+=item configtool.meta
+
+List of paths in which to place C<configtool.meta>.  Default 
+is /etc/configtool.meta.
+
+=back
+
+=head1 EXAMPLES
+
+  rb3 build systems/*
+  rb3 build systems/ant.example.org
+  rb3 find-iface mx0.example.org
+  rb3 find-installed apache2
+
+=head1 SEE ALSO
+
+FIXME: link to Ray's paper.  Also need to write user guide and link to that.
+
+=cut
+
 use strict;
 use warnings FATAL => 'all';
-use sigtrap die => 'normal-signals';
 
 use AppConfig qw( :expand );
 use File::Spec;
@@ -20,7 +259,6 @@ Readonly my $RCFILE => File::Spec->catfile( $ENV{HOME}, '.rb3rc' );
 
 my $config = AppConfig->new( { GLOBAL => { EXPAND => EXPAND_ALL } } );
 $config->define( "basedir=s"        );
-$config->define( "shuffle!"         );
 $config->define( "dry-run!"         );
 $config->define( "quiet!"           );
 $config->define( "silent!"          );
@@ -37,7 +275,8 @@ $config->getopt()
 
 $config->silent and $config->set( 'quiet', 1 );
 
-defined($config->basedir) or $config->basedir('.');
+defined( $config->basedir )
+    or warn "warning: basedir not set.  Query subcommands won't work\n";
 
 RB3::Config->BaseDir( $config->basedir );
 

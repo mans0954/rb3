@@ -1,13 +1,87 @@
-rb3 (1.19-1~test.8) unstable; urgency=low
+rb3 (1.25) unstable; urgency=low
 
+  * lib/RB3/CLI/Build.pm
+   - fix configtool.meta generation bug introduced in 1.23
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Tue, 20 Apr 2010 16:59:37 +0100
+
+rb3 (1.24) unstable; urgency=low
+
+  * lib/RB3/TemplateFunctions.pm:
+    - add PTR support to dnslookup
+    - add new functions store_netmask_in_table and find_netmask_in_table
+      as interfaces to more powerful Net::Netmask functionality for subnet
+      calculation
+
+ -- Dominic Hargreaves <dominic.hargreaves@oucs.ox.ac.uk>  Tue, 20 Apr 2010 15:09:15 +0100
+
+rb3 (1.23) unstable; urgency=low
+
+  * lib/RB3/TemplateFunctions.pm, lib/RB3/FileGenerator.pm,
+    lib/RB3/CLI/Build.pm, lib/RB3/CLI/ListSources.pm, bin/rb3
+    - Remove shuffle mode.
+  * lib/RB3/FileGenerator.pm
+    - Remove params.tmpl_source and params.tmpl_dest from params.
+  * lib/RB3/CLI/Build.pm
+    - configtool.meta parent directory creation.
+  * bin/rb3
+    - First stab at a manpage.
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Fri, 12 Feb 2010 12:27:30 +0000
+
+rb3 (1.22-1) unstable; urgency=low
+
+  * lib/RB3/TemplateFunctions.pm
+    - Shuffle with acceptable performance.
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Fri, 05 Feb 2010 16:53:32 +0000
+
+rb3 (1.21-1) unstable; urgency=low
+
+  * lib/RB3/TemplateFunctions.pm
+    - Improve shuffle.
+  
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Wed, 27 Jan 2010 20:45:55 +0000
+
+rb3 (1.20-1) unstable; urgency=low
+
+  * lib/RB3/Config.pm
+    - Don't derive hostname from the directory name.  It should now be
+      supplied as a normal param instead.
+  * lib/RB3/FileGenerator.pm
+    - Supply tmpl_source and tmpl_dest in the packvars namespace as well as
+      in params.  They should be removed from params in a later release.
+  * lib/RB3/CLI/UpdateSSHKeys.pm, lib/RB3/CLI/ListSources.pm
+    - Do not use basedir.
+  * lib/RB3/CLI/ListSources.pm
+    - Output ends in a newline.
+  * lib/RB3/CLI/Status.pm
+    - Remove.
+  * lib/RB3/Config.pm, lib/RB3/FileGenerator.pm
+    - Support "home" component in addition to "root" component and
+      NAME:PATH components.
+  * lib/RB3/Config.pm
+    - Lines starting with a colon are for the repository to communicate
+      fields with pre-defined meanings to the package, via params-like
+      YAML files.
+  * lib/RB3/TemplateFunctions.pm
+    - shuffle template function to allow the elimination of --shuffle
+      mode.
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Wed, 20 Jan 2010 19:37:52 +0000
+
+rb3 (1.19-1) unstable; urgency=low
+  
+  * bin/rb3
+    - Remove the use of sigtrap so we can cleanup temp files in children
+      and exit from process group as expected on a ^C.
   * lib/RB3/Config.pm, bin/rb3, lib/RB3/Config.pm, lib/RB3/CLI/DumpFiles.pm,
     lib/RB3/CLI/DumpParams.pm, lib/RB3/CLI/Build.pm, lib/RB3/CLI/ListSources.pm
     - Basedir and the "systems" subdirectory are no longer special for the
       "build" subcommand, but they're still special for query subcommands
       like find-installed and find-iface.
   * lib/RB3/CLI/Build.pm
-    - Allow SIGINT to have its natural effect.  This makes Ctrl-C do the
-      right thing in a terminal.
+    - Signal handler in children to clean up temporary files.
     - Continue trying to build other systems when one fails.
     - Produce clear report at end, showing which systems failed.
 

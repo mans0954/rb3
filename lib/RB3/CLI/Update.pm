@@ -1,5 +1,5 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/trunk/lib/RB3/CLI/Update.pm $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.25/lib/RB3/CLI/Update.pm $
 # $LastChangedRevision: 14469 $
 # $LastChangedDate: 2008-09-15 15:04:36 +0100 (Mon, 15 Sep 2008) $
 # $LastChangedBy: ray $
