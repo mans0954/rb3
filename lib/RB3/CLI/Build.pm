@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.30/lib/RB3/CLI/Build.pm $
-# $LastChangedRevision: 19204 $
-# $LastChangedDate: 2012-01-05 16:21:03 +0000 (Thu, 05 Jan 2012) $
-# $LastChangedBy: worc2070 $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.34/lib/RB3/CLI/Build.pm $
+# $LastChangedRevision: 19694 $
+# $LastChangedDate: 2012-07-10 21:36:55 +0100 (Tue, 10 Jul 2012) $
+# $LastChangedBy: tom $
 #
 package RB3::CLI::Build;
 
@@ -116,7 +116,21 @@ sub build_host_config {
     foreach my $file ( @{ $rb3->get_file_list } ) {
         my $source = $file->get_source
             or next;
-        $fg->generate( $source, $file->get_dest, $file->get_ctmeta_path, $file->get_parameter_list, $file->get_component );
+
+        eval {
+            $fg->generate( 
+                $source, $file->get_dest, $file->get_ctmeta_path, 
+                $file->get_parameter_list, $file->get_component 
+            );
+        };
+        if ($@) {
+            die "Error generating file.\n"
+                . "  source: $source\n"
+                . "  dest:   " . $file->get_dest . "\n"
+                . "  system: $hostdir\n"
+                . "  err:    $@"
+                ;
+       }
     }
 
     write_configtool_meta($rb3, $fg);

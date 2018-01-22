@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.30/lib/RB3/CLI/FindIface.pm $
-# $LastChangedRevision: 11543 $
-# $LastChangedDate: 2007-11-22 09:58:42 +0000 (Thu, 22 Nov 2007) $
-# $LastChangedBy: ray $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.34/lib/RB3/CLI/FindIface.pm $
+# $LastChangedRevision: 19495 $
+# $LastChangedDate: 2012-03-22 14:26:20 +0000 (Thu, 22 Mar 2012) $
+# $LastChangedBy: worc2070 $
 #
 package RB3::CLI::FindIface;
 
@@ -34,7 +34,10 @@ sub cmd_find_iface {
         my $fh = IO::File->new( $path, O_RDONLY )
             or die "open $path: $!";
         while ( <$fh> ) {
-            if ( ( my $addr ) = $_ =~ /^\s+address\s+$RE{net}{IPv4}{-keep}\s*$/ ) {
+            my $addr;
+            if ( ( $addr ) = $_ =~ /^\s+address\s+$RE{net}{IPv4}{-keep}\s*$/
+                    or  ( $addr ) = $_ =~ /^\s+(?:pre-|post-)?up\s+ip\s+addr\s+add\s+$RE{net}{IPv4}{-keep}\/\d+/ ) {
+                # Also cope with 'up ip addr add $ip/$mask...' syntax
                 if ( $wanted{ $addr } ) {
                     ( my $system ) = $path =~ m{^\Q$sys_dir\E/$RE{net}{domain}{-keep}/};
                     print "$system\n";
