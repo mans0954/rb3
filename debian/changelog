@@ -1,3 +1,10 @@
+rb3 (1.43) UNRELEASED; urgency=medium
+
+  * Team upload.
+  * Bump compat from 4 to 10
+
+ -- Christopher Hoskin <mans0954@debian.org>  Mon, 22 Jan 2018 20:57:31 +0000
+
 rb3 (1.42) stable; urgency=low
 
   [ Michael Howe ]
