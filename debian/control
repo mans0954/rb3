@@ -7,7 +7,6 @@ Maintainer: Systems Development and Support <sysdev@it.ox.ac.uk>
 Uploaders: Dominic Hargreaves <dominic.hargreaves@it.ox.ac.uk>, Michael Howe <michael.howe@it.ox.ac.uk>, Dameon Wagner <dameon.wagner@it.ox.ac.uk>, Dave Stewart <dave.stewart@it.ox.ac.uk>
 Standards-Version: 3.7.2
 Homepage: https://downloads.oucs.ox.ac.uk/free_software/
-XSBC-Origin-Hint-Subversion: $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.42/debian/control $
 
 Package: rb3
 Architecture: all
