@@ -1,5 +1,5 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.37/lib/RB3/FileGenerator.pm $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.40/lib/RB3/FileGenerator.pm $
 # $LastChangedRevision: 21931 $
 # $LastChangedDate: 2013-09-17 11:40:44 +0100 (Tue, 17 Sep 2013) $
 # $LastChangedBy: dom $

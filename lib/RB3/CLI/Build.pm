@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.37/lib/RB3/CLI/Build.pm $
-# $LastChangedRevision: 21931 $
-# $LastChangedDate: 2013-09-17 11:40:44 +0100 (Tue, 17 Sep 2013) $
-# $LastChangedBy: dom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.40/lib/RB3/CLI/Build.pm $
+# $LastChangedRevision: 22756 $
+# $LastChangedDate: 2014-01-20 12:38:12 +0000 (Mon, 20 Jan 2014) $
+# $LastChangedBy: oucs0173 $
 #
 package RB3::CLI::Build;
 
@@ -21,6 +21,7 @@ use POSIX qw( SIGINT WIFSIGNALED WTERMSIG WIFEXITED WEXITSTATUS );
 use RB3::Config;
 use RB3::File;
 use RB3::FileGenerator;
+use RB3::CLI::Graph;
 use YAML;
 
 sub cmd_build {
@@ -80,6 +81,9 @@ sub cmd_build {
                 if( $@ ) {
                     print STDERR $@;
                     print $failpipe $sys . chr(0);
+                }
+		else {
+		    RB3::CLI::Graph::cmd_graph_complete($class, $app_config, $sys);
                 }
             }
             exit 0;

@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.37/bin/rb3 $
-# $LastChangedRevision: 21931 $
-# $LastChangedDate: 2013-09-17 11:40:44 +0100 (Tue, 17 Sep 2013) $
-# $LastChangedBy: dom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.40/bin/rb3 $
+# $LastChangedRevision: 22734 $
+# $LastChangedDate: 2014-01-17 17:04:24 +0000 (Fri, 17 Jan 2014) $
+# $LastChangedBy: worc2070 $
 #
 
 =head1 NAME
@@ -47,6 +47,7 @@ The list includes the source templates, rb3 files and yml files.
 =head2 dump-params SYSTEM_DIR
 
 Report on the content of the "params" data structure for SYSTEM_DIR.
+The output is in UTF-8.
 
 The report is in YAML format.
 
@@ -107,6 +108,40 @@ Retrieve ssh public keys for managed hosts, reconcile them with
 the known fingerprints data, and store them in the repository.
 
 Assumes that subversion is used as the revision control system (BUG).
+
+=head2 graph-complete SYSTEM_DIR [...]
+
+Generate a tree to illustrate the dependancies between the files used to build
+a the system whose configuration is found ind SYSTEM_DIR.
+
+This command generates the complete rb3 tree (all files) for selected systems.
+The generated output is a graphviz dot file in the export directory of each
+system named C<system_complete_graph.dot>.
+
+See L</graph-rb3-only>, L</graph-copied-files>, L</graph-params> to generate
+partial trees.
+
+=head2 graph-rb3-only SYSTEM_DIR [...]
+
+Generate a tree to illustrate the dependancies between the files used to build
+a system.  This command includes only .rb3 files in the tree.  The generated
+output is a graphviz dot file in the export directory of each system named
+C<system_rb3_only_graph.dot>.
+
+=head2 graph-copied-files SYSTEM_DIR [...]
+
+Generate a tree to illustrate the dependancies between the files used to build
+a system.  This command generates the tree of files copied by rb3 (often
+generated from template toolkit files) for selected systems.  The generated
+output is a graphviz dot file in the export directory of each system named
+C<system_copied_files_graph.dot>.
+
+=head2 graph-params SYSTEM_DIR [...]
+
+Generate a tree to illustrate the dependancies between the files used to build
+a system.  This command generates the tree of included YAML files for selected
+systems.  The generated output is a graphviz dot file in the export directory
+of each system named C<system_params_graph.dot>.
 
 =head1 OPTIONS
 
@@ -183,8 +218,11 @@ The owner and group owner may optionally be specified, in form OWNER:GROUP.
 The file mode may optionally be specified, in octal.  Modes whose
 first octal digit is not zero are not currently supported.
 
+A target file specific YAML file with parameters can optionally be specified,
+by including '!path/to/parameters.yml' in the rule.
+
 Additional file properties can be passed through to any configtool.manifest
-files that are generated, by providing a word in the format c<$NAME=VALUE>.
+files that are generated, by providing a word in the format C<$NAME=VALUE>.
 For example, a deployer that's compatible with the configtool.manifest
 format could be asked not to try and display diffs for a binary file
 as follows:
@@ -249,7 +287,7 @@ benefit from some refactoring.
 
 Example:
 
-    \=rb3specs/dns_cache.rb3
+    =rb3specs/dns_cache.rb3
     # this system is the odd one out
     -/etc/named.conf
 
@@ -342,6 +380,8 @@ module for a detailed description.
   rb3 find-iface mx0.example.org
   rb3 find-installed apache2
   rb3 list-services systems/ant.example.org
+  rb3 graph-complete systems/ant.example.org
+
 
 =head1 SEE ALSO
 
