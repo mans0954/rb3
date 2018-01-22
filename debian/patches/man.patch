@@ -1,0 +1,13 @@
+Description: Add missing info to man page
+Author: Christopher Hoskin <mans0954@debian.org>
+--- a/lib/RB3/Config.pm
++++ b/lib/RB3/Config.pm
+@@ -7,7 +7,7 @@
+ 
+ =head1 NAME
+ 
+-RB3::Config
++RB3::Config - Config
+ 
+ =head1 SCOPE OF CONSUMERS
+ 
