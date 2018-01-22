@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.34/lib/RB3/CLI/Build.pm $
-# $LastChangedRevision: 19694 $
-# $LastChangedDate: 2012-07-10 21:36:55 +0100 (Tue, 10 Jul 2012) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.36/lib/RB3/CLI/Build.pm $
+# $LastChangedRevision: 19698 $
+# $LastChangedDate: 2012-07-12 00:31:21 +0100 (Thu, 12 Jul 2012) $
 # $LastChangedBy: tom $
 #
 package RB3::CLI::Build;
@@ -120,7 +120,7 @@ sub build_host_config {
         eval {
             $fg->generate( 
                 $source, $file->get_dest, $file->get_ctmeta_path, 
-                $file->get_parameter_list, $file->get_component 
+                $file->get_parameter_list, $file->get_component, $app_config
             );
         };
         if ($@) {
@@ -133,12 +133,12 @@ sub build_host_config {
        }
     }
 
-    write_configtool_meta($rb3, $fg);
-    write_configtool_manifests($rb3, $fg);
+    write_configtool_meta($rb3, $fg, $app_config);
+    write_configtool_manifests($rb3, $fg, $app_config);
 }
 
 sub write_configtool_meta {
-    my ($rb3, $filegen) = @_;
+    my ($rb3, $filegen, $app_config) = @_;
 
     my @metapaths;
 
@@ -165,7 +165,7 @@ sub write_configtool_meta {
     }
 
     for my $path (@metapaths) {
-        mkpath(dirname($path), 1, 0755);
+        mkpath(dirname($path), !$app_config->silent, 0755);
 
         my $ofh = IO::File->new( $path, O_RDWR|O_CREAT|O_TRUNC, 0644 )
             or die "open $path for writing: $!";
@@ -188,7 +188,7 @@ sub write_configtool_meta {
 }
 
 sub write_configtool_manifests {
-    my ($rb3, $filegen) = @_;
+    my ($rb3, $filegen, $app_config) = @_;
 
     my @mfpaths;
 
@@ -256,7 +256,7 @@ sub write_configtool_manifests {
     }
     
     for my $path ( @mfpaths ) {
-        mkpath(dirname($path), 1, 0755);
+        mkpath(dirname($path), !$app_config->silent, 0755);
 
         my $ofh = IO::File->new( $path, O_RDWR|O_CREAT|O_TRUNC, 0644 )
             or die "open $path for writing: $!";

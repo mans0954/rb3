@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.34/bin/rb3 $
-# $LastChangedRevision: 19204 $
-# $LastChangedDate: 2012-01-05 16:21:03 +0000 (Thu, 05 Jan 2012) $
-# $LastChangedBy: worc2070 $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.36/bin/rb3 $
+# $LastChangedRevision: 19996 $
+# $LastChangedDate: 2012-10-11 20:07:16 +0100 (Thu, 11 Oct 2012) $
+# $LastChangedBy: tom $
 #
 
 =head1 NAME
@@ -100,6 +100,9 @@ All options are also settable with lines in C<~/.rb3rc> of the
 form C<NAME = VALUE>.  The NAMEs do not include the leading dashes.
 Example: C<basedir = ~/rb3>.
 
+A limited set of options are also settable with lines in a C<.rb3repo>
+file within the repository.  These are noted below.
+
 =over 4
 
 =item --basedir DIR
@@ -132,6 +135,8 @@ value is 1.
 Use Template Toolkit's strict mode for the template processing.
 The default behaviour is currently not to be strict, but the default
 behaviour is likely to change in a future release.
+
+This option may be set with a C<.rb3repo> file within the repository.
 
 =back
 
@@ -316,6 +321,7 @@ use RB3::Config;
 use Readonly;
 
 Readonly my $RCFILE => File::Spec->catfile( $ENV{HOME}, '.rb3rc' );
+Readonly my $REPORCFILE => ".rb3repo";
 
 my $config = AppConfig->new( { GLOBAL => { EXPAND => EXPAND_ALL } } );
 $config->define( "basedir=s"        );
@@ -328,8 +334,23 @@ $config->define( "cfgdist_server=s" );
 $config->define( "legacy_client=s@" );
 $config->define( "strict" );
 
+my %overridable = (strict => 1);
+
 $config->file( $RCFILE )
     if -r $RCFILE;
+
+if ( -f $REPORCFILE ) {
+    my $repoconfig = AppConfig->new( { GLOBAL => { EXPAND => EXPAND_ALL } } );
+    $repoconfig->define("strict");
+
+    $repoconfig->file($REPORCFILE);
+
+    for (sort keys %overridable) {
+        if (defined($repoconfig->get($_))) {
+            $config->set($_, $repoconfig->get($_));
+        }
+    }
+}
 
 $config->getopt()
     or die "Error processing options\n";
