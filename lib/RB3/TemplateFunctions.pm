@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.27/lib/RB3/TemplateFunctions.pm $
-# $LastChangedRevision: 17888 $
-# $LastChangedDate: 2010-12-08 18:32:02 +0000 (Wed, 08 Dec 2010) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.28/lib/RB3/TemplateFunctions.pm $
+# $LastChangedRevision: 18559 $
+# $LastChangedDate: 2011-04-21 16:47:01 +0100 (Thu, 21 Apr 2011) $
 # $LastChangedBy: dom $
 #
 package RB3::TemplateFunctions;
@@ -27,6 +27,7 @@ use Math::BigInt;
 use Math::Random::ISAAC;
 use Net::DNS;
 use Net::Netmask;
+use NetAddr::IP;
 use Readonly;
 use Socket qw(inet_ntoa inet_aton AF_INET);
 use Sort::Fields ();
@@ -151,6 +152,10 @@ sub find_netmask_in_table {
     Net::Netmask::findNetblock($address, $table);
 }
 
+sub cmp_ip_addresses {
+    NetAddr::IP->new($_[0]) eq NetAddr::IP->new($_[1]);
+}
+
 =head1 FUNCTIONS
 
 The following functions are available:
@@ -191,6 +196,15 @@ Takes a test address and a Net::Netmask 'table' hashref and returns
 true if the test address is enclosed by the table, and false otherwise.
 
     [% SET is_in_table = netmask('192.168.0.1', table) %]
+
+=item cmp_ip_addresses
+
+Takes two string representations of IPv4 or IPv6 addresses and returns
+true if they represent the same address and false if they do not.
+This is better than a string comparison, because it will canonicalise
+the IPv6 addresses before comparing them.
+
+    [% cmp_ip_addresses('2001:630:440:105::17', '2001:630:440:105:0:0:0:17') %]
 
 =item ipaddr
 
@@ -314,6 +328,7 @@ our %functions = (
     dnslookup => \&dnslookup,
     store_netmask_in_table => \&store_netmask_in_table,
     find_netmask_in_table => \&find_netmask_in_table,
+    cmp_ip_addresses => \&cmp_ip_addresses,
 
     ipaddr => sub { ipaddr( shift ) },
     ip6addr => sub { ip6addr( shift ) },
