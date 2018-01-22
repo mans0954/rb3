@@ -1,0 +1,206 @@
+rb3 (1.19-1~test.8) unstable; urgency=low
+
+  * lib/RB3/Config.pm, bin/rb3, lib/RB3/Config.pm, lib/RB3/CLI/DumpFiles.pm,
+    lib/RB3/CLI/DumpParams.pm, lib/RB3/CLI/Build.pm, lib/RB3/CLI/ListSources.pm
+    - Basedir and the "systems" subdirectory are no longer special for the
+      "build" subcommand, but they're still special for query subcommands
+      like find-installed and find-iface.
+  * lib/RB3/CLI/Build.pm
+    - Allow SIGINT to have its natural effect.  This makes Ctrl-C do the
+      right thing in a terminal.
+    - Continue trying to build other systems when one fails.
+    - Produce clear report at end, showing which systems failed.
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Wed, 05 Aug 2009 15:28:30 +0100
+
+rb3 (1.18-1) unstable; urgency=low
+
+  * COPYING, INSTALL, README
+    - add some boilerplate ready for free software release
+  * debian/control
+    - change maintainer to Tom Jones <tom.jones@oucs.ox.ac.uk>
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Mon, 06 Jul 2009 14:46:56 +0100
+
+rb3 (1.17-1~ox.0) unstable; urgency=low
+
+  * Makefile.PL
+    - remove out of date contact information
+    - add EXE_FILES so that the rb3 executable is installed
+  * lib/RB3/FileGenerator, lib/RB3/CLI/Build.pm
+    - new silent option
+
+ -- Tom Jones <tom@ant.oucs.ox.ac.uk>  Tue, 30 Jun 2009 19:55:09 +0100
+
+rb3 (1.16-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/TemplateFunctions.pm
+    - remove hardcoded @NETWORKS and functions depending on it
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Mon, 30 Mar 2009 11:31:20 +0100
+
+rb3 (1.15-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/CLI/Build.pm
+    - child processes exit from cmd_build() instead of returning
+    - child processes' return codes properly collected and processed
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Mon, 22 Sep 2008 15:30:40 +0100
+
+rb3 (1.14-1~ox.0) unstable; urgency=low
+
+  * bin/rb3
+    - add option for number of jobs to run in parallel.
+  * lib/RB3/CLI/Build.pm
+    - fork to generate in parallel at per system granularity
+  * lib/RB3/TemplateFunctions.pm
+    - add functions to sort hashes of hashes
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Fri, 19 Sep 2008 19:04:50 +0100
+
+rb3 (1.13-1~ox.0) unstable; urgency=low
+
+  * bin/rb3
+    - delete rsync configuration options.
+    - add cfgdist_server and legacy_client options.
+  * lib/RB3/CLI/Update.pm
+    - run cfgdist-update if legacy clients are specified.
+  * examples/rb3rc
+    - update sample config with new options.
+
+ -- Ray Miller <ray@sysdev.oucs.ox.ac.uk>  Mon, 15 Sep 2008 15:02:47 +0100
+
+rb3 (1.12-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/Config.pm
+    - add attributes listing all associated rb3 and parameter files
+  * lib/RB3/CLI/ListSources.pm
+    - implement cmd_list_sources
+
+ -- Dominic Hargreaves <dominic.hargreaves@oucs.ox.ac.uk>  Fri,  6 Jun 2008 14:05:44 +0100
+
+rb3 (1.11-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/Config.pm, lib/RB3/File.pm
+    - Allow the rb3 file the file specification came from
+      to be returned in dump-files command.
+
+ -- Dominic Hargreaves <dominic.hargreaves@oucs.ox.ac.uk>  Thu, 22 May 2008 14:46:23 +0100
+
+rb3 (1.10-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/TemplateFunctions.pm
+    - dnslookup() should die if unexpected record type is returned;
+    resolves sysdev RT#31075.
+
+ -- Ray Miller <ray@sysdev.oucs.ox.ac.uk>  Thu, 20 Mar 2008 13:55:07 +0000
+
+rb3 (1.9-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/CLI/UpdateSSHKeys.pm
+    - implement cmd_update_ssh_keys().
+
+ -- Ray Miller <ray@sysdev.oucs.ox.ac.uk>  Wed, 19 Mar 2008 16:31:27 +0000
+
+rb3 (1.8-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/TemplateFunctions.pm
+    - implement fieldsort() (wrapper around Sort::Fields::fieldsort).
+  * lib/RB3/FileGenerator.pm
+    - add fieldsort() vmethod for lists.
+  * debian/control
+    - add dependency on libsort-fields-perl.
+
+ -- Ray Miller <ray@sysdev.oucs.ox.ac.uk>  Thu, 31 Jan 2008 16:29:27 +0000
+
+rb3 (1.7-1~ox.0) unstable; urgency=low
+
+  * Allow signals to be trapped so that cleanup routines are run when
+    an rb3 process is interrupted
+
+ -- Dominic Hargreaves <dominic.hargreaves@oucs.ox.ac.uk>  Mon, 14 Jan 2008 15:44:17 +0000
+
+rb3 (1.6-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/TemplateFunctions.pm
+    - implement contains().
+  * lib/RB3/FileGenerator.pm
+    - add contains() vmethod for lists.
+  * lib/RB3/Config.pm
+    - add 'basedir' to params.
+    - check that system root directory exists before running find(), otherwise
+      build dies when initialising a new system.
+
+ -- Ray Miller <ray@sysdev.oucs.ox.ac.uk>  Mon, 07 Jan 2008 12:08:34 +0000
+
+rb3 (1.5-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/FileGenerator.pm
+    - add lc() scalar vmethod to return lower-case version of a string.
+
+ -- Ray Miller <ray@sysdev.oucs.ox.ac.uk>  Wed, 02 Jan 2008 16:54:09 +0000
+
+rb3 (1.5-1~ox.0~test.1) unstable; urgency=low
+
+  * lib/RB3/FileGenerator.pm
+    - don't include '/' in destination component path.
+  * debian/control
+    - add dependency on libtemplate-plugin-yaml-perl.
+
+ -- Ray Miller <ray@sysdev.oucs.ox.ac.uk>  Thu, 13 Dec 2007 13:47:23 +0000
+
+rb3 (1.5-1~ox.0~test.0) unstable; urgency=low
+
+  * lib/RB3/FileGenerator.pm
+    - Replace root_dir with system_dir and compute destination path for
+    generated file from an optional component in the rb3 destination path.
+  * lib/RB3/CLI/Build.pm
+    - Pass system_dir rather than root_dir when creating RB3::FileGenerator.
+
+ -- Ray Miller <ray@sysdev.oucs.ox.ac.uk>  Thu, 13 Dec 2007 13:23:18 +0000
+
+rb3 (1.4-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/CLI/Build.pm
+    - truncate existing configtool.meta before writing to it.
+
+ -- moog <moog@sysdev.oucs.ox.ac.uk>  Mon,  3 Dec 2007 19:41:47 +0000
+
+rb3 (1.3-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/Desc.pm
+    - object wrapping system description.
+  * lib/RB3/CLI/FindInstalled.pm
+    - implement find-installed.
+
+ -- Ray Miller <ray@sysdev.oucs.ox.ac.uk>  Thu, 29 Nov 2007 13:40:17 +0000
+
+rb3 (1.2-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/CLI/Build.pm
+    - implement write_configtool_meta().
+  * lib/RB3/File.pm
+    - change defaults handling so that defaults can be accessed by callers.
+
+ -- Ray Miller <ray@sysdev.oucs.ox.ac.uk>  Fri, 23 Nov 2007 17:04:46 +0000
+
+rb3 (1.1-1~ox.0) unstable; urgency=low
+
+  * lib/RB3/CLI/DumpFiles.pm
+    - allow absolute paths to be specified on the command-line.
+  * lib/RB3/CLI/FindIface.pm
+    - implement find-iface command.
+  * lib/RB3/FileGenerator.pm
+    - implement Quiet() method.
+  * lib/RB3/CLI/Build.pm
+    - implement 'quiet' option.
+  * bin/rb3
+    - implement 'quiet' option.
+
+ -- Ray Miller <ray@sysdev.oucs.ox.ac.uk>  Thu, 22 Nov 2007 09:56:13 +0000
+
+rb3 (1.0-1~ox.0) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Ray Miller <ray@sysdev.oucs.ox.ac.uk>  Tue, 20 Nov 2007 15:45:16 +0000

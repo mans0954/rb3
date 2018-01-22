@@ -1,0 +1,54 @@
+#
+# rb3 configuration file - install in ~/.rb3rc
+#
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/trunk/examples/rb3rc $
+# $LastChangedRevision: 14469 $
+# $LastChangedDate: 2008-09-15 15:04:36 +0100 (Mon, 15 Sep 2008) $
+# $LastChangedBy: ray $
+#
+
+#
+# Path to local rb3 Subversion working-copy
+#
+# There is no default for this; it *must* be specified here or on the
+# command-line
+#
+basedir = ~/svn/sysdev/conf/rb3
+
+#
+# Hostname of cfgdist distribution server
+#
+# There is no default for this; if it is not specified here or on the
+# command-line, legacy clients using the rsync configtool mechanism 
+# will not be updated.
+#
+cfgdist_server = reasonable-excuse.oucs.ox.ac.uk
+
+#
+# Legacy clients using the rsync update mechanism
+#
+legacy_client = shelob.oucs.ox.ac.uk
+legacy_client = credibility-problem.oucs.ox.ac.uk
+
+#
+# How to invoke configtool on remote system(s)
+#
+# There is no default for this; it *must* be specified here or on the
+# command-line
+#
+configtool_cmd = with-creds -i root rksu -c "configtool --sync && configtool"
+
+#
+# Re-generate files that shuffle lists?
+#
+#shuffle off
+
+#
+# Dry-run mode?
+#
+#dry-run off
+
+#
+# Suppress informational messages?
+#
+# quiet off

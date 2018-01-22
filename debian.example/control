@@ -1,0 +1,15 @@
+Source: rb3
+Section: admin
+Priority: optional
+Build-Depends: debhelper (>= 5.0.0)
+Build-Depends-Indep: perl (>= 5.8), libclass-std-perl, libclass-data-inheritable-perl, libnet-dns-perl, libnet-netmask-perl, libreadonly-perl, libtemplate-perl, libyaml-perl, libmodule-pluggable-perl, libterm-query-perl, libregexp-common-perl, libtemplate-plugin-yaml-perl, libsort-fields-perl, libipc-run-perl
+Maintainer: Tom Jones <tom.jones@oucs.ox.ac.uk>
+Standards-Version: 3.7.2
+
+Package: rb3
+Architecture: all
+Depends: ${perl:Depends}, libclass-std-perl, libclass-data-inheritable-perl, libnet-dns-perl, libnet-netmask-perl, libreadonly-perl, libtemplate-perl, libyaml-perl, libmodule-pluggable-perl, libterm-query-perl, libregexp-common-perl, libtemplate-plugin-yaml-perl, ssh-client, libsort-fields-perl, libipc-run-perl
+Recommends: sysdev-sysadmin-utils
+Description: configuration management tools
+ Libraries and RB3 command-line tool for generating and managing configuration
+ repositories.

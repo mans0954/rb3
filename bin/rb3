@@ -1,0 +1,56 @@
+#!/usr/bin/perl
+#
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/trunk/bin/rb3 $
+# $LastChangedRevision: 16026 $
+# $LastChangedDate: 2009-08-06 16:51:34 +0100 (Thu, 06 Aug 2009) $
+# $LastChangedBy: tom $
+#
+
+use strict;
+use warnings FATAL => 'all';
+use sigtrap die => 'normal-signals';
+
+use AppConfig qw( :expand );
+use File::Spec;
+use Module::Pluggable require => 1, search_path => 'RB3::CLI';
+use RB3::Config;
+use Readonly;
+
+Readonly my $RCFILE => File::Spec->catfile( $ENV{HOME}, '.rb3rc' );
+
+my $config = AppConfig->new( { GLOBAL => { EXPAND => EXPAND_ALL } } );
+$config->define( "basedir=s"        );
+$config->define( "shuffle!"         );
+$config->define( "dry-run!"         );
+$config->define( "quiet!"           );
+$config->define( "silent!"          );
+$config->define( "configtool_cmd=s" );
+$config->define( "jobs|j=i", { DEFAULT => 1 } );
+$config->define( "cfgdist_server=s" );
+$config->define( "legacy_client=s@" );
+
+$config->file( $RCFILE )
+    if -r $RCFILE;
+
+$config->getopt()
+    or die "Error processing options\n";
+
+$config->silent and $config->set( 'quiet', 1 );
+
+defined($config->basedir) or $config->basedir('.');
+
+RB3::Config->BaseDir( $config->basedir );
+
+my $cmd = shift @ARGV
+    or die "command not specified\n";
+
+( my $method = "cmd_$cmd" ) =~ s/-/_/g;
+
+foreach my $plugin ( plugins() ) {
+    if ( $plugin->can( $method ) ) {
+        $plugin->$method( $config, @ARGV );
+        exit 0;
+    }
+}
+
+die "No handler found for $cmd\n";
