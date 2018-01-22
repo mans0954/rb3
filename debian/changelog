@@ -1,3 +1,31 @@
+rb3 (1.37) unstable; urgency=low
+
+  [ Tom Jones ]
+  * Allow output location to be controlled via output_base and
+    output_dir repository variables.  Enables better separation of 
+    input and output directories where required.
+  * Add "hostname" package variable which defaults to the directory
+    name but can be overridden with a repository variable also called
+    "hostname".
+
+  [ Dameon Wagner ]
+  * Add subcommand "list-services", for listing the service interface
+    addresses bound to the host.
+
+  [ Tom Jones ]
+  * Produce as UTF-8 from templates.  Authored by Michael Howe, ref #108540.
+
+  [ Michael Howe ]
+  * Make list-services recognize 'ip addr add' syntax, also use the
+    Regexp::Common definition of IPv4 addresses.
+  * list-services can take a hostname as well as system directory
+
+  [ Dave Stewart ]
+  * Fix why-path.  The diff  is quite ugly and I'd like to find a
+    neater way of achieving the same thing.
+
+ -- Dominic Hargreaves <dominic.hargreaves@it.ox.ac.uk>  Tue, 17 Sep 2013 11:43:01 +0100
+
 rb3 (1.36) unstable; urgency=low
 
   * Per-repository file called .rb3repo instead of .rb3rc so as to
