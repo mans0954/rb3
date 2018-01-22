@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/trunk/lib/RB3/CLI/Build.pm $
-# $LastChangedRevision: 16026 $
-# $LastChangedDate: 2009-08-06 16:51:34 +0100 (Thu, 06 Aug 2009) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.25/lib/RB3/CLI/Build.pm $
+# $LastChangedRevision: 17167 $
+# $LastChangedDate: 2010-04-20 17:45:17 +0100 (Tue, 20 Apr 2010) $
 # $LastChangedBy: tom $
 #
 package RB3::CLI::Build;
@@ -9,11 +9,12 @@ package RB3::CLI::Build;
 use strict;
 use warnings FATAL => 'all';
 
-use File::Basename qw( basename );
+use File::Basename qw( basename dirname );
+use File::Path;
 use File::Spec;
 use IO::File;
 use IO::Pipe;
-use POSIX qw( WIFSIGNALED WTERMSIG WIFEXITED WEXITSTATUS );
+use POSIX qw( SIGINT WIFSIGNALED WTERMSIG WIFEXITED WEXITSTATUS );
 use RB3::Config;
 use RB3::File;
 use RB3::FileGenerator;
@@ -21,11 +22,6 @@ use RB3::FileGenerator;
 sub cmd_build {
     my $class = shift;
     my $app_config = shift;
-
-    RB3::FileGenerator->BaseDir( $app_config->basedir );
-
-    RB3::FileGenerator->EnableShuffle
-          if $app_config->shuffle;
 
     RB3::FileGenerator->DryRun( 1 )
           if $app_config->get( "dry-run" );
@@ -49,9 +45,6 @@ sub cmd_build {
     my $bkt;
     my @failhandles;
 
-    # Why do TT and YAML try and be clever?
-    exists( $SIG{INT} ) and delete $SIG{INT};
-
     FORK: for ( $bkt = 0; $bkt < $app_config->jobs; $bkt++ ) {
 
         my $failpipe = IO::Pipe->new;
@@ -66,6 +59,12 @@ sub cmd_build {
         }
         elsif( $pid == 0 ) {
             $failpipe->writer;
+
+            $SIG{INT} = sub {
+                File::Temp::cleanup();
+                exit(1);
+            };
+
             foreach my $sys ( @{ $bkts[$bkt] } ) {
                 warn "Building configuration for $sys\n"
                     unless $app_config->silent;
@@ -106,7 +105,7 @@ sub build_host_config {
     foreach my $file ( @{ $rb3->get_file_list } ) {
         my $source = $file->get_source
             or next;
-        $fg->generate( $source, $file->get_dest, $file->get_parameter_list );
+        $fg->generate( $source, $file->get_dest, $file->get_ctmeta_path, $file->get_parameter_list, $file->get_component );
     }
 
     write_configtool_meta( $rb3 );
@@ -115,17 +114,44 @@ sub build_host_config {
 sub write_configtool_meta {
     my $rb3 = shift;
 
-    my $meta_path = File::Spec->catfile( $rb3->get_root_dir, 'etc', 'configtool.meta' );
-    my $ofh = IO::File->new( $meta_path, O_RDWR|O_CREAT|O_TRUNC, 0644 )
-        or die "open $meta_path for writing: $!";
+    my @metapaths;
 
-    my @files = map { $_->[ 0 ] } sort { $a->[1] cmp $b->[1] } map { [ $_, $_->get_dest ] } @{ $rb3->get_file_list };
+    SET_METAPATHS: {
+        my $metapaths
+            = $rb3->get_repovars_list->template_vars->{"configtool.meta"};
+        if (defined($metapaths)) {
+            ref($metapaths) eq 'ARRAY' 
+                or die "template var 'configtool.meta' must be a list\n";
 
-    foreach my $file ( @files ) {
-        next if $file->get_owner eq RB3::File->DefaultOwner
-            and $file->get_group eq RB3::File->DefaultGroup
-                and oct( $file->get_mode ) == oct( RB3::File->DefaultMode );
-        $ofh->printf( "/%s %s %s 0%o\n", map( { $file->$_ } qw( get_dest get_owner get_group ) ), oct( $file->get_mode ) );
+            @metapaths = @$metapaths;
+        }
+        else {
+            @metapaths = (
+                File::Spec->catfile($rb3->get_root_dir, 'etc', 'configtool.meta')
+            );
+        }
+    }
+
+    for my $path (@metapaths) {
+        mkpath(dirname($path), 1, 0755);
+
+        my $ofh = IO::File->new( $path, O_RDWR|O_CREAT|O_TRUNC, 0644 )
+            or die "open $path for writing: $!";
+
+
+        my @files = map { $_->[ 0 ] } sort { $a->[1] cmp $b->[1] }
+            map { [ $_, $_->get_dest ] } @{ $rb3->get_file_list };
+
+        foreach my $file ( @files ) {
+            next if $file->get_owner eq RB3::File->DefaultOwner
+                and $file->get_group eq RB3::File->DefaultGroup
+                    and oct( $file->get_mode ) == oct( RB3::File->DefaultMode );
+            $ofh->printf(
+                "%s %s %s 0%o\n",
+                (map { $file->$_ } qw( get_ctmeta_path get_owner get_group )), 
+                oct( $file->get_mode )
+            );
+        }
     }
 }
 
@@ -178,8 +204,6 @@ sub reap_children {
 
     $ex and exit( $ex );
 }
-
-
 
 1;
 

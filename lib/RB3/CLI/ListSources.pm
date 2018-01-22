@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/trunk/lib/RB3/CLI/ListSources.pm $
-# $LastChangedRevision: 16026 $
-# $LastChangedDate: 2009-08-06 16:51:34 +0100 (Thu, 06 Aug 2009) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.25/lib/RB3/CLI/ListSources.pm $
+# $LastChangedRevision: 16972 $
+# $LastChangedDate: 2010-02-12 12:28:25 +0000 (Fri, 12 Feb 2010) $
 # $LastChangedBy: tom $
 #
 package RB3::CLI::Build;
@@ -20,11 +20,6 @@ sub cmd_list_sources {
     my $class = shift;
     my $app_config = shift;
 
-    RB3::FileGenerator->BaseDir( $app_config->basedir );
-
-    RB3::FileGenerator->EnableShuffle
-          if $app_config->shuffle;
-
     RB3::FileGenerator->DryRun( 1 )
           if $app_config->get( "dry-run" );
 
@@ -39,7 +34,7 @@ sub cmd_list_sources {
     }
 
     my %files = map { $_ => 1 } @files;
-    print join "\n", sort keys %files;
+    print "$_\n" for sort keys %files;
 }
 
 sub get_files_for_host {

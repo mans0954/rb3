@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/trunk/lib/RB3/Config.pm $
-# $LastChangedRevision: 16026 $
-# $LastChangedDate: 2009-08-06 16:51:34 +0100 (Thu, 06 Aug 2009) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.25/lib/RB3/Config.pm $
+# $LastChangedRevision: 16292 $
+# $LastChangedDate: 2009-10-02 12:03:22 +0100 (Fri, 02 Oct 2009) $
 # $LastChangedBy: tom $
 #
 package RB3::Config;
@@ -28,23 +28,15 @@ use YAML;
     my %files_of         :ATTR( :get<file_list> );
     my %rb3_files_of     :ATTR( :get<rb3_file_list> );
     my %params_of        :ATTR( :get<parameter_list> );
+    my %repovars_of      :ATTR( :get<repovars_list> );
     my %params_files_of  :ATTR( :get<params_file_list> );
 
     sub BUILD {
         my ( $self, $obj_id, $arg_ref ) = @_;
 
-        my %params = (
-            hostname => RB3::Parameter->new(
-                {
-                    name   => 'hostname',
-                    value  => basename( $arg_ref->{ system_dir } ),
-                    source => 'auto'
-                }
-            ),
-        );
-
         $files_of{ $obj_id }  = RB3::FileList->new();
-        $params_of{ $obj_id } = RB3::ParameterList->new( { params => \%params } );
+        $params_of{ $obj_id } = RB3::ParameterList->new( { params => {} } );
+        $repovars_of{ $obj_id } = RB3::ParameterList->new( { params => {} } );
         $rb3_files_of{ $obj_id } = [];
         $params_files_of{ $obj_id } = [];
     }
@@ -63,6 +55,11 @@ use YAML;
     sub get_root_dir {
         my $self = shift;
         File::Spec->catdir( $self->get_system_dir, 'root' );
+    }
+
+    sub get_home_dir {
+        my $self = shift;
+        File::Spec->catdir( $self->get_system_dir, 'home' );
     }
 
     sub get_rb3_path {
@@ -100,7 +97,7 @@ use YAML;
 
         my $fh = IO::File->new( $rb3, O_RDONLY )
             or die( "Error opening $rb3: $!\n" );
-        push @{$rb3_files_of{ ident $self }}, File::Spec->abs2rel( $rb3, __PACKAGE__->BaseDir );
+        push @{$rb3_files_of{ ident $self }}, File::Spec->abs2rel( $rb3, '.' );
         while ( <$fh> ) {
             next if /^#/;
             chomp;
@@ -110,9 +107,8 @@ use YAML;
             }
             if ( s{^\+}{} ) {
                 my $args = parse_add_args( split );
-                die( "BaseDir not set" )
-                    unless defined __PACKAGE__->BaseDir;
-                $args->{ rb3_source } = File::Spec->abs2rel( $rb3, __PACKAGE__->BaseDir );
+
+                $args->{ rb3_source } = File::Spec->abs2rel( $rb3, '.' );
                 $self->get_file_list->add_file( RB3::File->new( $args ) );
             }
             elsif ( s{^\-/?}{} ) {
@@ -120,12 +116,16 @@ use YAML;
             }
             elsif ( s{^\!}{} ) {
                 push @{$params_files_of{ ident $self }}, $_;
-                my $params_path = File::Spec->catfile( __PACKAGE__->BaseDir, $_ );
+                my $params_path = File::Spec->catfile( '.', $_ );
                 $self->get_parameter_list->load_from_yaml( $params_path );
             }
             elsif ( s{^\=}{} ) {
-                my $rb3_path = File::Spec->catfile( __PACKAGE__->BaseDir, $_ );
+                my $rb3_path = File::Spec->catfile( '.', $_ );
                 $self->parse_rb3( $rb3_path, $depth + 1 );
+            }
+            elsif ( s{^\:}{} ) {
+                my $repovars_path = File::Spec->catfile( '.', $_ );
+                $self->get_repovars_list->load_from_yaml( $repovars_path );
             }
             else {
                 die "Parse error at $rb3 line $.\n";
@@ -136,11 +136,32 @@ use YAML;
 
     sub parse_add_args : PRIVATE {
         my %properties;
-        ( $properties{ dest } = shift ) =~ s{^/+}{};
+
+        my $dest = shift;
+        if( $dest =~ s,^/,, ) {
+            $properties{ component } = 'root';
+            $properties{ notation }  = '/';
+        }
+        elsif( $dest =~ s,^~,, ) {
+            $properties{ component } = 'home';
+            $properties{ notation  } = '~';
+        }
+        # "external" components, so they won't end up in configtool.meta:
+        elsif( $dest =~ s{^([^:/]+):/}{} ) {
+            my $comp = $1;
+            $properties{ component } = $comp;
+            $properties{ notation } = undef;
+        }
+        else {
+            die "all file paths must start with / or ~ or COMPNAME:\ninvalid path: $dest\n";
+        }
+
+        $properties{ dest } = $dest;
+
         $properties{ params } = RB3::ParameterList->new();
         foreach ( @_ ) {
             if ( s/\!// ) {
-                my $params_path = File::Spec->catfile( __PACKAGE__->BaseDir, $_ );
+                my $params_path = File::Spec->catfile( '.', $_ );
                 $properties{ params }->load_from_yaml( $params_path );
             }
             elsif ( /:/ ) {
