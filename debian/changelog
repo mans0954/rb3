@@ -9,6 +9,7 @@ rb3 (1.42-1) UNRELEASED; urgency=medium
   * Remove custom field from debian/control
   * Switch debian/rules to dh
   * Update debian/copyright
+  * Add debian/watch file
 
  -- Christopher Hoskin <mans0954@debian.org>  Mon, 22 Jan 2018 20:57:31 +0000
 
