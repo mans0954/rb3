@@ -1,3 +1,25 @@
+rb3 (1.36) unstable; urgency=low
+
+  * Per-repository file called .rb3repo instead of .rb3rc so as to
+    avoid confusion when rb3 is being run from home directory.
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Wed, 10 Oct 2012 16:34:38 +0100
+
+rb3 (1.35) unstable; urgency=low
+
+  * Allow strict to be set on a per-repository basis using a .rb3rc
+    file in the repository, in the same format as ~/.rb3rc.
+  * Make the find_netmask_in_table template function return zero instead
+    of undef for a negative result.  It is an error in Template Toolkit's 
+    strict mode for a function to return undef.  We still agree with
+    find_netmask_in_table's spec, which says it returns false if there's
+    no match.
+  * Don't emit "mkdir" messages in silent mode.
+  * Document Template Toolkit VMethods that rb3 makes available to the
+    templates.
+
+ -- Tom Jones <tom.jones@oucs.ox.ac.uk>  Mon, 17 Sep 2012 13:51:35 +0100
+
 rb3 (1.34) unstable; urgency=low
 
   * Print a nicer error report when a template fails to build.  It now

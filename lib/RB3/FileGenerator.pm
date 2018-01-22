@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.34/lib/RB3/FileGenerator.pm $
-# $LastChangedRevision: 19204 $
-# $LastChangedDate: 2012-01-05 16:21:03 +0000 (Thu, 05 Jan 2012) $
-# $LastChangedBy: worc2070 $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.36/lib/RB3/FileGenerator.pm $
+# $LastChangedRevision: 19698 $
+# $LastChangedDate: 2012-07-12 00:31:21 +0100 (Thu, 12 Jul 2012) $
+# $LastChangedBy: tom $
 #
 package RB3::FileGenerator;
 
@@ -66,7 +66,8 @@ sub InitVMethods {
     my %system_dir_of :ATTR( :init_arg<system_dir> :get<system_dir> );
 
     sub generate {
-        my ( $self, $source, $dest, $ctmeta_path, $file_params, $component ) = @_;
+        my ( $self, $source, $dest, $ctmeta_path, $file_params,
+             $component, $app_config ) = @_;
 
         my $dest_path = $self->repopath($component, $dest );
         my $dest_dir = dirname( $dest_path );
@@ -78,7 +79,7 @@ sub InitVMethods {
         return
             if $self->DryRun;
 
-        mkpath( $dest_dir, 1, 0755 );
+        mkpath( $dest_dir, !$app_config->Silent, 0755 );
 
         my $tmp = File::Temp->new( DIR => $dest_dir, UNLINK => 1 );
 

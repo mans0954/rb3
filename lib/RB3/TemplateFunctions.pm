@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.34/lib/RB3/TemplateFunctions.pm $
-# $LastChangedRevision: 19694 $
-# $LastChangedDate: 2012-07-10 21:36:55 +0100 (Tue, 10 Jul 2012) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.36/lib/RB3/TemplateFunctions.pm $
+# $LastChangedRevision: 19699 $
+# $LastChangedDate: 2012-07-12 00:46:23 +0100 (Thu, 12 Jul 2012) $
 # $LastChangedBy: tom $
 #
 package RB3::TemplateFunctions;
@@ -227,7 +227,9 @@ sub store_netmask_in_table {
 sub find_netmask_in_table {
     my $address = shift;
     my $table = shift;
-    Net::Netmask::findNetblock($address, $table);
+    my $ret = Net::Netmask::findNetblock($address, $table);
+
+    return defined($ret) ? $ret : 0;
 }
 
 sub cmp_ip_addresses {
@@ -410,6 +412,39 @@ and returns the shuffle list
     [% FOREACH ns IN shuffle(myns, params.hostname) -%]
     nameserver [% ns %]
     [% END -%]
+
+=back
+
+=head1 SCALAR VMETHODS
+
+These are available as template toolkit vmethods for scalars from within the
+templates.
+
+=over 4
+
+=item lc($str)
+
+Returns lower cased $str. Analogous to the Perl function of the same
+name.
+
+=back
+
+=head1 LIST VMETHODS 
+
+These are available as template toolkit vmethods for lists from within
+the template.
+
+=over 4
+
+=item contains($item)
+
+Returns true if the list contains $item, false otherwise.
+
+=item fieldsort($spec)
+
+Sort fields analogously to Sort::Fields::fieldsort (see Sort::Fields
+documentation), except that the list to be sorted isn't passed in the
+arguments; rather, it is the subject of the vmethod call.
 
 =back
 
