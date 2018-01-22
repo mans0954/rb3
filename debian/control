@@ -14,5 +14,8 @@ Depends: perl (>= 5.10.1), ${perl:Depends}, ${misc:Depends}, libclass-std-perl, 
 Recommends: sysdev-sysadmin-utils
 Suggests: xdot
 Description: configuration management tools
- Libraries and RB3 command-line tool for generating and managing configuration
- repositories.
+ rb3 is a configuration repository builder. It uses a simple combination of
+ YAML data files and Template Toolkit templates to generate configuration
+ files for hosts. It is usually used in conjunction with a revision control
+ system (example: git), and a mechanism to deploy the generated
+ configuration files (example: configtool).
