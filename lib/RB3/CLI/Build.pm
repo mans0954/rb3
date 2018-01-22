@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.28/lib/RB3/CLI/Build.pm $
-# $LastChangedRevision: 17167 $
-# $LastChangedDate: 2010-04-20 17:45:17 +0100 (Tue, 20 Apr 2010) $
-# $LastChangedBy: tom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.30/lib/RB3/CLI/Build.pm $
+# $LastChangedRevision: 19204 $
+# $LastChangedDate: 2012-01-05 16:21:03 +0000 (Thu, 05 Jan 2012) $
+# $LastChangedBy: worc2070 $
 #
 package RB3::CLI::Build;
 
@@ -12,12 +12,15 @@ use warnings FATAL => 'all';
 use File::Basename qw( basename dirname );
 use File::Path;
 use File::Spec;
+use File::Spec::Functions; # imports catfile
 use IO::File;
 use IO::Pipe;
+#use List::MoreUtils qw(uniq);
 use POSIX qw( SIGINT WIFSIGNALED WTERMSIG WIFEXITED WEXITSTATUS );
 use RB3::Config;
 use RB3::File;
 use RB3::FileGenerator;
+use YAML;
 
 sub cmd_build {
     my $class = shift;
@@ -31,6 +34,9 @@ sub cmd_build {
 
     RB3::FileGenerator->Silent( 1 )
           if $app_config->silent;
+
+    RB3::FileGenerator->Strict( 1 )
+          if $app_config->strict;
 
     my $max_jobno = $app_config->jobs - 1;
 
@@ -90,6 +96,11 @@ sub cmd_build {
 sub build_host_config {
     my ( $app_config, $hostdir ) = @_;
 
+    unless ( -d $hostdir ) {
+        warn "Skipping $hostdir (not a directory)\n";
+        return;
+    }
+
     my $rb3 = RB3::Config->new( { system_dir => $hostdir } );
 
     unless ( -r $rb3->get_rb3_path ) {
@@ -108,22 +119,29 @@ sub build_host_config {
         $fg->generate( $source, $file->get_dest, $file->get_ctmeta_path, $file->get_parameter_list, $file->get_component );
     }
 
-    write_configtool_meta( $rb3 );
+    write_configtool_meta($rb3, $fg);
+    write_configtool_manifests($rb3, $fg);
 }
 
 sub write_configtool_meta {
-    my $rb3 = shift;
+    my ($rb3, $filegen) = @_;
 
     my @metapaths;
 
     SET_METAPATHS: {
         my $metapaths
             = $rb3->get_repovars_list->template_vars->{"configtool.meta"};
+
         if (defined($metapaths)) {
             ref($metapaths) eq 'ARRAY' 
                 or die "template var 'configtool.meta' must be a list\n";
 
-            @metapaths = @$metapaths;
+            for my $mp (@$metapaths) {
+                my %props = RB3::Config::decode_path_notation($mp);
+                push @metapaths, $filegen->repopath(
+                    $props{component}, $props{dest}
+                );
+            }      
         }
         else {
             @metapaths = (
@@ -152,6 +170,84 @@ sub write_configtool_meta {
                 oct( $file->get_mode )
             );
         }
+    }
+}
+
+sub write_configtool_manifests {
+    my ($rb3, $filegen) = @_;
+
+    my @mfpaths;
+
+    SET_MANIFESTPATHS: {
+        my $mfpaths
+            = $rb3->get_repovars_list->template_vars->{"configtool.manifest"};
+
+        if (defined($mfpaths)) {
+            ref($mfpaths) eq 'ARRAY' 
+                or die "template var 'configtool.manifest' must be a list\n";
+
+            for my $mp (@$mfpaths) {
+                my %props = RB3::Config::decode_path_notation($mp);
+                push @mfpaths, $filegen->repopath(
+                    $props{component}, $props{dest}
+                );
+            }
+        }
+
+        # If we want to generate the manifest in a default location for common
+        # setups in future, the logic would go something like this (but
+        # with proper component handling).
+
+        # Reasoning: if there's a home component, manifest consumer
+        # can probably write to their home directory but not /etc.  If
+        # the only component is root, common case will be that the consumer 
+        # of the manifest is running as root.
+#       else {
+             # Would need to uncomment "use List::MoreUtils" to get uniq.
+#            my @comps = uniq(map { $_->get_component } @{$rb3->get_file_list};
+#            if (grep { $_ eq 'home' } @comps) {
+#                push @mfpaths, catfile(
+#                    $rb3->get_root_dir, 'home/.configtool.manifest'
+#                );
+#            }
+#            elsif (@comps == 1 and $comps[0] eq 'root') {
+#                push @mfpaths, catfile(
+#                    $rb3->get_root_dir, 'root/etc/configtool.manifest'
+#                );
+#            }
+#        }
+    }
+
+    return unless @mfpaths;
+
+    my @manifest_data;
+
+    my @files = map { $_->[ 0 ] } sort { $a->[1] cmp $b->[1] }
+            map { [ $_, $_->get_dest ] } @{ $rb3->get_file_list };
+
+    foreach my $file ( @files ) {
+        next if !$file->get_owner_explicitly_set
+            and !$file->get_group_explicitly_set
+            and !$file->get_mode_explicitly_set
+            and !scalar(%{$file->get_extras});
+
+        my %mfentry = (path => $file->get_ctmeta_path);
+        $file->get_owner_explicitly_set and $mfentry{owner} = $file->get_owner;
+        $file->get_group_explicitly_set and $mfentry{group} = $file->get_group;
+        $file->get_mode_explicitly_set and $mfentry{mode} = $file->get_mode;
+
+        %mfentry = (%mfentry, %{$file->get_extras});
+
+        push @manifest_data, \%mfentry;
+    }
+    
+    for my $path ( @mfpaths ) {
+        mkpath(dirname($path), 1, 0755);
+
+        my $ofh = IO::File->new( $path, O_RDWR|O_CREAT|O_TRUNC, 0644 )
+            or die "open $path for writing: $!";
+
+        print $ofh YAML::Dump(\@manifest_data);
     }
 }
 

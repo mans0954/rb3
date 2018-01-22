@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.28/lib/RB3/CLI/ListSources.pm $
-# $LastChangedRevision: 16972 $
-# $LastChangedDate: 2010-02-12 12:28:25 +0000 (Fri, 12 Feb 2010) $
-# $LastChangedBy: tom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.30/lib/RB3/CLI/ListSources.pm $
+# $LastChangedRevision: 19193 $
+# $LastChangedDate: 2012-01-05 12:52:33 +0000 (Thu, 05 Jan 2012) $
+# $LastChangedBy: worc2070 $
 #
 package RB3::CLI::Build;
 
@@ -39,6 +39,11 @@ sub cmd_list_sources {
 
 sub get_files_for_host {
     my ( $app_config, $sysdir ) = @_;
+
+    unless ( -d $sysdir ) {
+        warn "Skipping $sysdir (not a directory)\n";
+        return;
+    }
 
     my $rb3 = RB3::Config->new( { system_dir => $sysdir } );
 

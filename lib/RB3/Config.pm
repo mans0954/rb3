@@ -1,9 +1,33 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.28/lib/RB3/Config.pm $
-# $LastChangedRevision: 17932 $
-# $LastChangedDate: 2010-12-17 10:56:14 +0000 (Fri, 17 Dec 2010) $
-# $LastChangedBy: dom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.30/lib/RB3/Config.pm $
+# $LastChangedRevision: 19204 $
+# $LastChangedDate: 2012-01-05 16:21:03 +0000 (Thu, 05 Jan 2012) $
+# $LastChangedBy: worc2070 $
 #
+
+=head1 NAME
+
+RB3::Config
+
+=head1 SCOPE OF CONSUMERS
+
+Internal to the rb3 application.
+
+=head1 UTILITY FUNCTIONS
+
+=head2 decode_path_notation($pathspec)
+
+Given a path in rb3's notation for destination paths, returns a hash
+containing the file's path within that component (key: "dest"), 
+the name of the component (key: "component"), and a hint about the
+notation that was used originally (key: "notation").
+
+For example, decode_path_notation('~/foo') should return:
+
+  (dest => 'foo', component => 'home', notation => '~')
+
+=cut
+
 package RB3::Config;
 
 use strict;
@@ -160,29 +184,12 @@ use YAML;
         my %properties;
 
         my $dest = shift;
-        if( $dest =~ s,^/,, ) {
-            $properties{ component } = 'root';
-            $properties{ notation }  = '/';
-        }
-        elsif( $dest =~ s,^~,, ) {
-            $properties{ component } = 'home';
-            $properties{ notation  } = '~';
-        }
-        # "external" components, so they won't end up in configtool.meta:
-        elsif( $dest =~ s{^([^:/]+):/}{} ) {
-            my $comp = $1;
-            $properties{ component } = $comp;
-            $properties{ notation } = undef;
-        }
-        else {
-            die "all file paths must start with / or ~ or COMPNAME:\ninvalid path: $dest\n";
-        }
 
-        $properties{ dest } = $dest;
+        %properties = decode_path_notation($dest);
 
         $properties{ params } = RB3::ParameterList->new();
         foreach ( @_ ) {
-            if ( s/\!// ) {
+            if ( s/^\!// ) {
                 my $params_path = File::Spec->catfile( '.', $_ );
                 $properties{ params }->load_from_yaml( $params_path );
             }
@@ -196,6 +203,9 @@ use YAML;
                     if defined $properties{ mode };
                 $properties{ mode } = $_;
             }
+            elsif ( /^\$(.*?)=(.*)/ ) {
+                $properties{extras}{$1} = $2;
+            }
             else {
                 die( "duplicate source" )
                     if defined $properties{ source };
@@ -203,6 +213,42 @@ use YAML;
             }
         }
         return \%properties;
+    }
+
+
+    sub decode_path_notation {
+        my $dest_encoded = shift;
+
+        my %properties;
+
+        # Call it $dest_ptype while under construction.
+        my $dest_ptype = $dest_encoded;
+
+        if( $dest_ptype =~ s,^/,, ) {
+            $properties{ component } = 'root';
+            $properties{ notation }  = '/';
+        }
+        elsif( $dest_ptype =~ s,^~,, ) {
+            $properties{ component } = 'home';
+            $properties{ notation  } = '~';
+        }
+        # "external" components, so they won't end up in configtool.meta:
+        elsif( $dest_ptype =~ s{^([^:/~]+):/}{} ) {
+            my $comp = $1;
+            $properties{ component } = $comp;
+            $properties{ notation } = undef;
+        }
+        else {
+            die "all file paths must start with / or ~ or "
+                . "COMPNAME:\ninvalid path: $dest_ptype\n";
+        }
+        # If we're still here, its value is now the destination path (relative
+        # to the component).
+        my $dest = $dest_ptype;
+
+        $properties{dest} = $dest;
+
+        return %properties;
     }
 
     sub why_path {

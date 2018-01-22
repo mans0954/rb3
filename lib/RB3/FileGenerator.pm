@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.28/lib/RB3/FileGenerator.pm $
-# $LastChangedRevision: 16972 $
-# $LastChangedDate: 2010-02-12 12:28:25 +0000 (Fri, 12 Feb 2010) $
-# $LastChangedBy: tom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.30/lib/RB3/FileGenerator.pm $
+# $LastChangedRevision: 19204 $
+# $LastChangedDate: 2012-01-05 16:21:03 +0000 (Thu, 05 Jan 2012) $
+# $LastChangedBy: worc2070 $
 #
 package RB3::FileGenerator;
 
@@ -14,16 +14,28 @@ use base 'Class::Data::Inheritable';
 __PACKAGE__->mk_classdata( DryRun  => 0     );
 __PACKAGE__->mk_classdata( Quiet   => 0     );
 __PACKAGE__->mk_classdata( Silent  => 0     );
+__PACKAGE__->mk_classdata( Strict  => 0     );
 __PACKAGE__->InitVMethods();
 
 use Class::Std;
 use File::Basename qw( dirname );
 use File::Path qw( mkpath );
+use File::Spec::Functions;
 use File::Temp;
 use IO::File;
 use RB3::TemplateFunctions;
 use Template;
 use Template::Stash;
+
+=head1 NAME
+
+RB3::FileGenerator - Generate files for a target system.
+
+=head1 SCOPE OF CONSUMERS
+
+Internal to the rb3 application.
+
+=cut
 
 sub InitVMethods {
     my $class = shift;
@@ -38,7 +50,11 @@ sub InitVMethods {
 
     sub Template {
         unless ( $tt ) {
-            $tt = Template->new( { INCLUDE_PATH => '.' } );
+            my %ttopts = ( INCLUDE_PATH => '.' );
+            if (RB3::FileGenerator->Strict) {
+                $ttopts{STRICT} = 1;
+            }
+            $tt = Template->new( %ttopts );
         }
         return $tt;
     }
@@ -52,7 +68,7 @@ sub InitVMethods {
     sub generate {
         my ( $self, $source, $dest, $ctmeta_path, $file_params, $component ) = @_;
 
-        my $dest_path = File::Spec->catfile( $self->get_system_dir, $component, $dest );
+        my $dest_path = $self->repopath($component, $dest );
         my $dest_dir = dirname( $dest_path );
 #        my $dest_relpath = File::Spec->abs2rel( $dest_path, "." );
 
@@ -89,6 +105,20 @@ sub InitVMethods {
 
         rename( $tmp->filename, $dest_path )
             or die "Error renaming " . $tmp->filename . " to $dest_path: $!";
+    }
+
+=head2 repopath($component, $destpath)
+
+Given a destination path on the target of $destpath, and component
+$component, returns the path of the output file relative to the rb3
+repository that we're in.
+
+=cut
+
+    sub repopath {
+        my ($self, $component, $destpath) = @_;
+
+        return canonpath(catfile($self->get_system_dir, $component, $destpath));
     }
 }
 

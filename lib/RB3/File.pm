@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.28/lib/RB3/File.pm $
-# $LastChangedRevision: 17648 $
-# $LastChangedDate: 2010-10-05 23:12:33 +0100 (Tue, 05 Oct 2010) $
-# $LastChangedBy: tom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.30/lib/RB3/File.pm $
+# $LastChangedRevision: 19204 $
+# $LastChangedDate: 2012-01-05 16:21:03 +0000 (Thu, 05 Jan 2012) $
+# $LastChangedBy: worc2070 $
 #
 package RB3::File;
 
@@ -27,28 +27,56 @@ use RB3::ParameterList;
     my %owner_of      :ATTR( :get<owner>                   );
     my %group_of      :ATTR( :get<group>                   );
     my %mode_of       :ATTR( :get<mode>                    );
+    my %extras_of      :ATTR( :get<extras>                   );
     my %params_of     :ATTR( :get<parameter_list>          );
     my %component_of  :ATTR( :get<component>               );
     my %notation_of   :ATTR( :get<notation>                );
+    my %owner_explicitly_set_of :ATTR( :get<owner_explicitly_set> );
+    my %group_explicitly_set_of :ATTR( :get<group_explicitly_set> );
+    my %mode_explicitly_set_of  :ATTR( :get<mode_explicitly_set>  );
 
     sub BUILD {
         my ( $self, $obj_id, $arg_ref ) = @_;
 
-        $params_of{ $obj_id } = defined( $arg_ref->{ params } ) ? $arg_ref->{ params }
-                                                                : RB3::ParameterList->new();
+        $params_of{ $obj_id } = defined( $arg_ref->{ params } )
+                              ? $arg_ref->{ params }
+                              : RB3::ParameterList->new();
 
-        $owner_of{ $obj_id } = defined( $arg_ref->{ owner } ) ? $arg_ref->{ owner }
-                                                              : __PACKAGE__->DefaultOwner();
+        if (defined($arg_ref->{ owner })) {
+            $owner_of{ $obj_id } = $arg_ref->{ owner };
+            $owner_explicitly_set_of{ $obj_id } = 1;
+        }
+        else {
+            $owner_of{ $obj_id } = __PACKAGE__->DefaultOwner();
+        }
 
-        $group_of{ $obj_id } = defined( $arg_ref->{ group } ) ? $arg_ref->{ group }
-                                                              : __PACKAGE__->DefaultGroup();
+        if (defined( $arg_ref->{ group } )) {
+            $group_of{ $obj_id } = $arg_ref->{ group };
+            $group_explicitly_set_of{ $obj_id } = 1;
+        }
+        else {
+            $group_of{ $obj_id } = __PACKAGE__->DefaultGroup();
+        }
 
-        $mode_of{ $obj_id } = defined( $arg_ref->{ mode } ) ? $arg_ref->{ mode }
-                                                            : __PACKAGE__->DefaultMode();
-        $component_of{ $obj_id } = defined( $arg_ref->{ component } ) ? $arg_ref->{ component }
-                                                                      : __PACKAGE__->DefaultComponent();
-        $notation_of{ $obj_id } = defined( $arg_ref->{ notation } ) ? $arg_ref->{ notation }
-                                                                      : __PACKAGE__->DefaultNotation();
+        if (defined( $arg_ref->{ mode } )) {
+            $mode_of{ $obj_id } = $arg_ref->{ mode };
+            $mode_explicitly_set_of{ $obj_id } = 1;
+        }
+        else {
+            $mode_of{ $obj_id } = __PACKAGE__->DefaultMode();
+        }
+
+        $extras_of{ $obj_id } = defined( $arg_ref->{ extras } )
+                              ? $arg_ref->{ extras }
+                              : {};
+
+        $component_of{ $obj_id } = defined( $arg_ref->{ component } )
+                                 ? $arg_ref->{ component }
+                                 : __PACKAGE__->DefaultComponent();
+
+        $notation_of{ $obj_id } = defined( $arg_ref->{ notation } )
+                                ? $arg_ref->{ notation }
+                                : __PACKAGE__->DefaultNotation();
     }
 
     sub as_hash : HASHIFY {

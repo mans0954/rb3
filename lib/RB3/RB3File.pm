@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.28/lib/RB3/RB3File.pm $
-# $LastChangedRevision: 17648 $
-# $LastChangedDate: 2010-10-05 23:12:33 +0100 (Tue, 05 Oct 2010) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.30/lib/RB3/RB3File.pm $
+# $LastChangedRevision: 19037 $
+# $LastChangedDate: 2011-10-08 19:30:06 +0100 (Sat, 08 Oct 2011) $
 # $LastChangedBy: tom $
 #
 package RB3::RB3File;
@@ -32,6 +32,12 @@ use File::Spec;
         else {
             return $self->path;
         }
+    }
+
+    sub stringify :STRINGIFY {
+        my ($self) = @_;
+
+        return $path_of{ident $self};
     }
 }
 
