@@ -1,3 +1,35 @@
+rb3 (1.40) stable; urgency=low
+
+  * fixed a bug where data from different systems gets mangled when building
+    multiple systems at the same time
+
+ -- Kristian Kocher <kristian.kocher@it.ox.ac.uk>  Mon, 20 Jan 2014 17:44:26 +0000
+
+rb3 (1.39) stable; urgency=low
+
+  * Explicitly drop support for etch and lenny (perl <5.10.1) as they lack
+    File::Path make_path support.
+
+ -- Michael Howe <michael.howe@it.ox.ac.uk>  Mon, 20 Jan 2014 12:49:36 +0000
+
+rb3 (1.38) stable; urgency=low
+
+  [ Kristian Kocher ]
+  * Integrating the graphing process into the main build process.
+
+  [ Michael Howe ]
+  * Make dump-params explicitly output in UTF-8.
+  * New RB3::CLI::Graph module from Kristian Kocher (srt#131509)
+  * Suggest xdot for displaying RB3::CLI::Graph-created graphs
+
+  [ Dameon Wagner ]
+  * bin/rb3
+    -  Fix POD markup typo
+    -  Add documentation about using a specific YAML file on a
+       "per generated file" basis.
+
+ -- Kristian Kocher <kristian.kocher@it.ox.ac.uk>  Fri, 17 Jan 2014 16:30:00 +0000
+
 rb3 (1.37) unstable; urgency=low
 
   [ Tom Jones ]

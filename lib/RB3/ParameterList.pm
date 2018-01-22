@@ -1,5 +1,5 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.37/lib/RB3/ParameterList.pm $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.40/lib/RB3/ParameterList.pm $
 # $LastChangedRevision: 11523 $
 # $LastChangedDate: 2007-11-20 14:29:06 +0000 (Tue, 20 Nov 2007) $
 # $LastChangedBy: ray $

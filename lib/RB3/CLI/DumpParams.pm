@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.37/lib/RB3/CLI/DumpParams.pm $
-# $LastChangedRevision: 16026 $
-# $LastChangedDate: 2009-08-06 16:51:34 +0100 (Thu, 06 Aug 2009) $
-# $LastChangedBy: tom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.40/lib/RB3/CLI/DumpParams.pm $
+# $LastChangedRevision: 21960 $
+# $LastChangedDate: 2013-09-18 15:44:08 +0100 (Wed, 18 Sep 2013) $
+# $LastChangedBy: worc2070 $
 #
 package RB3::CLI::DumpParams;
 
@@ -20,6 +20,7 @@ sub cmd_dump_params {
 
     my $rb3 = RB3::Config->new( { system_dir => $sysdir } );
     $rb3->read_config();
+    binmode STDOUT, ':utf8';
     print YAML::Dump( { map { $_->get_name => $_->as_hash } @{ $rb3->get_parameter_list } } );
 }
 
