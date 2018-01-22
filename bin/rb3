@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.40/bin/rb3 $
-# $LastChangedRevision: 22734 $
-# $LastChangedDate: 2014-01-17 17:04:24 +0000 (Fri, 17 Jan 2014) $
-# $LastChangedBy: worc2070 $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.41.2/bin/rb3 $
+# $LastChangedRevision: 23978 $
+# $LastChangedDate: 2014-05-30 11:04:28 +0100 (Fri, 30 May 2014) $
+# $LastChangedBy: oucs0173 $
 #
 
 =head1 NAME
@@ -70,7 +70,7 @@ with that package installed, along with version information.
 Assumes that managed hosts are running Debian and are accessible over ssh.
 
 Assumes that contactable hosts are flagged in a particular way in
-the repository (BUG).
+the repository (BUG).  See L<REPOSITORY LAYOUT ASSUMPTIONS> below.
 
 This command requires the "basedir" variable to be set, and thus
 does not require your current working directory to be an rb3 
@@ -82,7 +82,8 @@ For the DNS hostname or IP address given as an argument, display
 a list of hosts (usually one) configured for that address.
 
 Assumes that network interface configuration data is laid out in a 
-particular way in the repository (BUG).
+particular way in the repository (BUG).  See L<REPOSITORY LAYOUT ASSUMPTIONS>
+below.
 
 This command requires the "basedir" variable to be set, and thus
 does not require your current working directory to be an rb3 
@@ -96,7 +97,8 @@ HOSTNAME, in which case the system is assumed to be in systems/HOSTNAME within
 "basedir".
 
 Assumes that network interface configuration data is laid out in a 
-particular way in the repository (BUG).
+particular way in the repository (BUG).  See L<REPOSITORY LAYOUT ASSUMPTIONS>
+below.
 
 This command requires the "basedir" variable to be set, and thus
 does not require your current working directory to be an rb3 
@@ -108,40 +110,23 @@ Retrieve ssh public keys for managed hosts, reconcile them with
 the known fingerprints data, and store them in the repository.
 
 Assumes that subversion is used as the revision control system (BUG).
+See L<REPOSITORY LAYOUT ASSUMPTIONS> below.
 
-=head2 graph-complete SYSTEM_DIR [...]
+=head2 graph SYSTEM_DIR [...]
 
 Generate a tree to illustrate the dependancies between the files used to build
 a the system whose configuration is found ind SYSTEM_DIR.
 
-This command generates the complete rb3 tree (all files) for selected systems.
+This command generates the rb3 tree (all files) for selected systems.
 The generated output is a graphviz dot file in the export directory of each
-system named C<system_complete_graph.dot>.
+system named C<system_graph.dot>.
 
-See L</graph-rb3-only>, L</graph-copied-files>, L</graph-params> to generate
-partial trees.
-
-=head2 graph-rb3-only SYSTEM_DIR [...]
-
-Generate a tree to illustrate the dependancies between the files used to build
-a system.  This command includes only .rb3 files in the tree.  The generated
-output is a graphviz dot file in the export directory of each system named
-C<system_rb3_only_graph.dot>.
-
-=head2 graph-copied-files SYSTEM_DIR [...]
-
-Generate a tree to illustrate the dependancies between the files used to build
-a system.  This command generates the tree of files copied by rb3 (often
-generated from template toolkit files) for selected systems.  The generated
-output is a graphviz dot file in the export directory of each system named
-C<system_copied_files_graph.dot>.
-
-=head2 graph-params SYSTEM_DIR [...]
-
-Generate a tree to illustrate the dependancies between the files used to build
-a system.  This command generates the tree of included YAML files for selected
-systems.  The generated output is a graphviz dot file in the export directory
-of each system named C<system_params_graph.dot>.
+The graph uses the following colour code:
+ - blue: rb3 files
+ - red: yaml files
+ - green: generated files
+ - black: sources for generated files (mostly template toolkit files)
+ - gray: files that are not generated (suppressed with a -)
 
 =head1 OPTIONS
 
@@ -186,6 +171,32 @@ The default behaviour is currently not to be strict, but the default
 behaviour is likely to change in a future release.
 
 This option may be set with a C<.rb3repo> file within the repository.
+
+=item --graph_no_template_source
+
+If this option is set, rb3 will not include the source of generated files
+in the tree.
+
+=item --graph_no_copied_files
+
+If this option is set, rb3 will not include generated files in the tree.
+
+=item --graph_no_params
+
+If this option is set, rb3 will not include yaml files in the tree.
+
+=item --graph_deep
+
+If this option is set, rb3 will parse template toolkit files and include
+all processed files in the tree.
+
+=item --graph_output_directory DIR
+
+This sets the directory where rb3 will write the generated graph.
+
+=item --graph_output_filename FILENAME
+
+This sets the name of the file rb3 will write the graph to.
 
 =back
 
@@ -373,6 +384,43 @@ namespace so they can be used directly by templates. These functions
 are defined in L<RB3::TemplateFunctions>; see the documentation for that
 module for a detailed description.
 
+=head1 REPOSITORY LAYOUT ASSUMPTIONS
+
+Various commands ("update-ssh-keys", "find-installed", "find-iface",
+"list-services") assume certain specific repository setup examples.
+
+=over 4
+
+=item SSH keys
+
+The "update-ssh-keys" command assumes that there is a directory
+F<defaults/ssh_keys> containing a file F<fingerprints.yml> with the following
+structure:
+
+  ssh_key_fingerprints:
+    ant.example.org:
+      dsa: 00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff
+      rsa: ff:ee:dd:cc:bb:aa:99:88:77:66:55:44:33:22:11:00
+
+=item find-iface, list-services
+
+These commands assume that F</etc/network/interfaces> exists for every host and
+contains either C<address 192.0.2.1>-style addresses or C<up ip addr add
+192.0.2.1> (where C<up> can also be C<pre-up> or C<post-up>)-style addresses.
+
+=item find-installed
+
+This command assumes each system has a F<desc.yml> file containing the
+following YAML:
+
+  control:
+    active: (true|false)
+    autoupdate: (true|false)
+
+Only if both active and autoupdate are true will the system be queried.
+
+=back
+
 =head1 EXAMPLES
 
   rb3 build systems/*
@@ -380,7 +428,7 @@ module for a detailed description.
   rb3 find-iface mx0.example.org
   rb3 find-installed apache2
   rb3 list-services systems/ant.example.org
-  rb3 graph-complete systems/ant.example.org
+  rb3 graph systems/ant.example.org
 
 
 =head1 SEE ALSO
@@ -415,6 +463,12 @@ $config->define( "jobs|j=i", { DEFAULT => 1 } );
 $config->define( "cfgdist_server=s" );
 $config->define( "legacy_client=s@" );
 $config->define( "strict" );
+$config->define( "graph_no_template_source!" );
+$config->define( "graph_no_copied_files!" );
+$config->define( "graph_no_params!" );
+$config->define( "graph_deep!" );
+$config->define( "graph_output_directory=s" );
+$config->define( "graph_output_filename=s" );
 
 my %overridable = (strict => 1);
 

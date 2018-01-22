@@ -1,7 +1,7 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.40/lib/RB3/CLI/Graph.pm $
-# $LastChangedRevision: 22774 $
-# $LastChangedDate: 2014-01-20 16:38:35 +0000 (Mon, 20 Jan 2014) $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.41.2/lib/RB3/CLI/Graph.pm $
+# $LastChangedRevision: 24030 $
+# $LastChangedDate: 2014-06-04 10:34:33 +0100 (Wed, 04 Jun 2014) $
 # $LastChangedBy: ouit0139 $
 #
 package RB3::CLI::Graph;
@@ -13,201 +13,206 @@ use warnings FATAL => 'all';
 use File::Basename qw( basename dirname fileparse );
 use File::Path qw( make_path );
 use File::Spec;
-use File::Spec::Functions; # imports catfile
+use File::Spec::Functions;    # imports catfile
 use IO::File;
 use IO::Pipe;
-#use List::MoreUtils qw(uniq);
 use POSIX qw( SIGINT WIFSIGNALED WTERMSIG WIFEXITED WEXITSTATUS );
 use RB3::Config;
 use RB3::File;
 use RB3::FileGenerator;
 use YAML;
 use List::MoreUtils qw/ uniq /;
+use RB3::GraphViz;
 
-sub cmd_graph_complete
-{
-    my $class = shift;
-    my $app_config = shift;
-    foreach my $name (@_)
-    {
+my $rb3_colour        = 'blue';
+my $copied_colour     = 'green';
+my $yaml_colour       = 'red';
+my $template_colour   = 'black';
+my $suppressed_colour = 'gray';
+my $rb3_shape         = 'ellipse';
+my $copied_shape      = 'box';
+my $yaml_shape        = 'box';
+my $template_shape    = 'box';
+my $suppressed_shape  = 'box';
+
+sub cmd_graph {
+    my $class           = shift;
+    my $app_config      = shift;
+    my $template_source = 1;
+    my $copied          = 1;
+    my $deep            = 0;
+    my $params          = 1;
+    if ( $app_config->graph_no_copied_files ) {
+        $copied = 0;
+    }
+    if ( $app_config->graph_no_template_source ) {
+        $template_source = 0;
+    }
+    if ( $app_config->graph_deep ) {
+        $deep            = 1;
+        $template_source = 1;
+        $copied          = 1;
+    }
+    if ( $app_config->graph_no_params ) {
+        $params = 0;
+    }
+    foreach my $name (@_) {
         my $OUTPUT;
-        my @DATA;
-        if ( substr($name, -1) eq '/')
-	{
-	    $name = substr($name, 0, -1);
-	}
+        if ( substr( $name, -1 ) eq '/' ) {
+            $name = substr( $name, 0, -1 );
+        }
         my $config_file = "$name/config.rb3";
-        die "No config.rb3 in $name (is it a system directory?)\n"
-            unless( -f $config_file );
-
-        my $full_path=$name . "/export/system_complete_graph.dot";
+        unless ( -f $config_file ) {
+            warn "No config.rb3 in $name (is it a system directory?)\n";
+            next;
+        }
+        my $directory = $name . "/export/";
+        if ( $app_config->graph_output_directory ) {
+            $directory = $app_config->graph_output_directory;
+        }
+        my $filename = "system_graph.dot";
+        if ( $app_config->graph_output_filename ) {
+            $filename = $app_config->graph_output_filename;
+        }
+        my $full_path = $directory . $filename;
         my ( $file, $directories ) = fileparse $full_path;
-        if ( !-d $directories )
-        {
+        if ( !-d $directories ) {
             make_path $directories
                 or die "Failed to create path: $directories";
         }
-        open($OUTPUT, ">$full_path");
-        print "complete tree for $name\n" unless $app_config->quiet;
-        print $OUTPUT 'digraph "' . $name . '"' . " {\n";
-        print $OUTPUT 'node[fontname="Courier-Bold", fontsize=14]' . "\n";
-        print $OUTPUT "rankdir = LR\n";
-        print $OUTPUT "mclimit=24\n";
-        process_file($config_file, \@DATA, 1, 1);
-        my @unique = uniq @DATA;
-        foreach (@unique)
-        {
-            print $OUTPUT $_;
-        }
-        print $OUTPUT "}\n";
+        warn "Building tree for $name\n" unless $app_config->silent;
+        my $graph_name = basename($name);
+        $graph_name =~ s/\..*//;
+        $graph_name =~ s/-/_/g;
+        my $graph = RB3::GraphViz->new(
+            name        => "$graph_name",
+            layout      => 'dot',
+            rankdir     => 1,
+            concentrate => 1,
+            graph => { splines => 'ortho', nodestep => 0.3, mclimit => 24 },
+            node => { fontname => "Courier-Bold", fontsize => 14 }
+        );
+        process_file( $config_file, $graph, $copied, $params,
+            $template_source, $deep );
+        open( $OUTPUT, ">$full_path" );
+        print $OUTPUT $graph->as_canon;
         close($OUTPUT);
     }
 }
 
-sub cmd_graph_rb3_only
-{
-    my $class = shift;
-    my $app_config = shift;
-    foreach my $name (@_)
-    {
-        my $OUTPUT;
-        my @DATA;
-        my $config_file = "$name/config.rb3";
-        die "No config.rb3 in $name (is it a system directory?)\n"
-            unless( -f $config_file );
-
-        my $full_path=$name . "/export/system_rb3_only_graph.dot";
-        my ( $file, $directories ) = fileparse $full_path;
-        if ( !-d $directories )
-        {
-            make_path $directories
-                or die "Failed to create path: $directories";
-        }
-        open($OUTPUT, ">$full_path");
-        print "rb3 tree for $name\n" unless $app_config->quiet;
-        print $OUTPUT 'digraph "' . $name . '"' . " {\n";
-        print $OUTPUT 'node[fontname="Courier-Bold", fontsize=14]' . "\n";
-        print $OUTPUT "rankdir = LR\n";
-        print $OUTPUT "mclimit=24\n";
-        process_file($config_file, \@DATA, 0, 0);
-        my @unique = uniq @DATA;
-        foreach (@unique)
-        {
-            print $OUTPUT $_;
-        }
-        print $OUTPUT "}\n";
-        close($OUTPUT);
-    }
+sub add_node_and_edge {
+    my $graph  = shift;
+    my $target = shift;
+    my $source = shift;
+    my $colour = shift;
+    my $shape  = shift;
+    $graph->add_node( $target, color => $colour, shape => $shape );
+    $graph->add_edge( $source => $target, color => $colour );
 }
 
-sub cmd_graph_copied_files
-{
-    my $class = shift;
-    my $app_config = shift;
-    foreach my $name (@_)
-    {
-        my $OUTPUT;
-        my @DATA;
-        my $config_file = "$name/config.rb3";
-        die "No config.rb3 in $name (is it a system directory?)\n"
-            unless( -f $config_file );
+sub process_file {
+    my $parent   = shift;
+    my $graph    = shift;
+    my $copied   = shift;
+    my $yaml     = shift;
+    my $template = shift;
+    my $deep     = shift;
 
-        my $full_path=$name . "/export/system_copied_files_graph.dot";
-        my ( $file, $directories ) = fileparse $full_path;
-        if ( !-d $directories )
-        {
-            make_path $directories
-                or die "Failed to create path: $directories";
-        }
-        open($OUTPUT, ">$full_path");
-        print "copied files tree for $name\n" unless $app_config->quiet;
-        print $OUTPUT 'digraph "' . $name . '"' . " {\n";
-        print $OUTPUT 'node[fontname="Courier-Bold", fontsize=14]' . "\n";
-        print $OUTPUT "rankdir = LR\n";
-        print $OUTPUT "mclimit=24\n";
-        process_file($config_file, \@DATA, 1, 0);
-        my @unique = uniq @DATA;
-        foreach (@unique)
-        {
-            print $OUTPUT $_;
-        }
-        print $OUTPUT "}\n";
-        close($OUTPUT);
-    }
-}
-
-sub cmd_graph_params
-{
-    my $class = shift;
-    my $app_config = shift;
-    foreach my $name (@_)
-    {
-        my $OUTPUT;
-        my @DATA;
-        my $config_file = "$name/config.rb3";
-        die "No config.rb3 in $name (is it a system directory?)\n"
-            unless( -f $config_file );
-
-        my $full_path=$name . "/export/system_params_graph.dot";
-        my ( $file, $directories ) = fileparse $full_path;
-        if ( !-d $directories )
-        {
-            make_path $directories
-                or die "Failed to create path: $directories";
-        }
-        open($OUTPUT, ">$full_path");
-        print "yml file tree for $name\n" unless $app_config->quiet;
-        print $OUTPUT 'digraph "' . $name . '"' . " {\n";
-        print $OUTPUT 'node[fontname="Courier-Bold", fontsize=14]' . "\n";
-        print $OUTPUT "rankdir = LR\n";
-        print $OUTPUT "mclimit=24\n";
-        process_file($config_file, \@DATA, 0, 1);
-        my @unique = uniq @DATA;
-        foreach (@unique)
-        {
-            print $OUTPUT $_;
-        }
-        print $OUTPUT "}\n";
-        close($OUTPUT);
-    }
-}
-
-sub process_file
-{
-    my $parent = shift;
-    my $DATA_REF = shift;
-    my $c = shift;
-    my $y = shift;
-    push(@$DATA_REF, '"' . $parent . '" [color=blue]' . "\n");
+    $graph->add_node( $parent, color => $rb3_colour, shape => $rb3_shape );
     my $PARENT;
-    open($PARENT, "<", $parent);
-    while(<$PARENT>)
-    {
-        next if /^#/;
-        $_ .= <$PARENT> while s/\\\n// and not eof;
-        my $line = $_;
+    open( $PARENT, "<", $parent );
+    while (my $line = <$PARENT>) {
+        next if $line =~ /^#/;
+
+        #  handle line splicing in rb3 files
+        while ($line =~ s/\\\s*$//) {
+            $line .= <$PARENT>;
+        }
+
         chomp($line);
-        if ((substr($line, 0, 1) eq "+") && ($c == 1))
-        {
-            $line = substr($line, 1);
-            push(@$DATA_REF, '"' . $line . '" [shape=box color=green]' . "\n");
-            push(@$DATA_REF, '"' . $parent . '" -> "' . $line . '"' . "\n");
+        if ( ( substr( $line, 0, 1 ) eq "+" ) && ( $copied == 1 ) ) {
+            $line = substr( $line, 1 );
+            $line =~ s/\t/ /g;
+            my @words = split( / /, $line );
+            my $file = $words[0];
+            add_node_and_edge( $graph, $file, $parent, $copied_colour,
+                $copied_shape );
+            if ( $template == 1 ) {
+                shift @words;
+                while (@words) {
+                    if ( $words[0] =~ /\// ) {
+                        last;
+                    }
+                    else {
+                        shift @words;
+                    }
+                }
+                if ( substr( $words[0], 0, 1 ) eq "!" ) {
+                    $words[0] = substr( $words[0], 1 );
+                    add_node_and_edge( $graph, $words[0], $file, $yaml_colour,
+                        $yaml_shape );
+                }
+                else {
+                    process_template( $words[0], $file, $graph, $deep );
+                }
+            }
         }
-        elsif ((substr($line, 0, 1) eq "!") && ($y == 1))
-        {
-            $line = substr($line, 1);
-            push(@$DATA_REF, '"' . $line . '" [shape=box color=red]' . "\n");
-            push(@$DATA_REF, '"' . $parent . '" -> "' . $line . '"' . "\n");
+        elsif ( ( substr( $line, 0, 1 ) eq "-" ) && ( $copied == 1 ) ) {
+            $line = substr( $line, 1 );
+            add_node_and_edge( $graph, $line, $parent, $suppressed_colour,
+                $suppressed_shape );
         }
-        elsif (substr($line, 0, 1) eq "=")
-        {
-            $line = substr($line, 1);
-            push(@$DATA_REF, '"' . $parent . '" -> "' . $line . '"' . "\n");
-            process_file($line, $DATA_REF, $c, $y);
+        elsif ( ( substr( $line, 0, 1 ) eq "!" ) && ( $yaml == 1 ) ) {
+            $line = substr( $line, 1 );
+            add_node_and_edge( $graph, $line, $parent, $yaml_colour,
+                $yaml_shape );
+        }
+        elsif ( substr( $line, 0, 1 ) eq "=" ) {
+            $line = substr( $line, 1 );
+            $graph->add_edge( $parent => $line, color => $rb3_colour );
+            process_file( $line, $graph, $copied, $yaml, $template, $deep );
         }
     }
 }
 
+sub process_template {
+    my $template = shift;
+    my $parent   = shift;
+    my $graph    = shift;
+    my $deep     = shift;
+    add_node_and_edge( $graph, $template, $parent, $template_colour,
+        $template_shape );
+    if ( !$deep ) {
+        return;
+    }
+    my $TEMPLATE;
+    open( $TEMPLATE, "<", $template );
+    while (my $tline = <$TEMPLATE>) {
+        next if $tline =~ /^#/;
+        next if $tline !~ /PROCESS\s+/;
+        next if $tline !~ /\//;
+        next if $tline =~ /\$/;
+        my @line   = split(/PROCESS\s+/, $tline);
+        my @tmp    = split( /;/, $line[1] );
+        my @string = split( / /, $tmp[0] );
+        my $filename;
+
+        if ( substr( $string[0], 0, 1 ) eq '"' ) {
+            my @file = split( /"/, $string[0] );
+            $filename = $file[1];
+        }
+        elsif ( substr( $string[0], 0, 1 ) eq "'" ) {
+            my @file = split( /'/, $string[0] );
+            $filename = $file[1];
+        }
+        else {
+            $filename = $string[0];
+        }
+        chomp($filename);
+        next if ( $filename eq $template );
+        process_template( $filename, $template, $graph, $deep );
+    }
+}
 
 1;
 

@@ -1,3 +1,23 @@
+rb3 (1.41.2) UNRELEASED; urgency=low
+
+  [ Kristian Kocher ]
+  * Use file path and name as node names in graphs
+
+ -- Kristian Kocher <kristian.kocher@it.ox.ac.uk>  Fri, 06 Jun 2014 09:06:14 +0100
+
+rb3 (1.41.1) stable; urgency=low
+
+  [ Kristian Kocher ]
+  * Merged all graphing functions into one. The type of tree is controlled through options.
+  * It is now possible to include template toolkit files in a "deep" tree.
+  * Generated files and their source are now in different nodes in the tree.
+
+  [ Michael Howe ]
+  * Add support for ecdsa keys in RB3::CLI::UpdateSSHKeys.
+  * Document (some of the) repository layout assumptions. 
+
+ -- Kristian Kocher <kristian.kocher@it.ox.ac.uk>  Thu, 06 Feb 2014 12:42:50 +0000
+
 rb3 (1.40) stable; urgency=low
 
   * fixed a bug where data from different systems gets mangled when building

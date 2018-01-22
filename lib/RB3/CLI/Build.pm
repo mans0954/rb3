@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.40/lib/RB3/CLI/Build.pm $
-# $LastChangedRevision: 22756 $
-# $LastChangedDate: 2014-01-20 12:38:12 +0000 (Mon, 20 Jan 2014) $
-# $LastChangedBy: oucs0173 $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.41.2/lib/RB3/CLI/Build.pm $
+# $LastChangedRevision: 23775 $
+# $LastChangedDate: 2014-05-13 11:22:34 +0100 (Tue, 13 May 2014) $
+# $LastChangedBy: ouit0139 $
 #
 package RB3::CLI::Build;
 
@@ -82,9 +82,6 @@ sub cmd_build {
                     print STDERR $@;
                     print $failpipe $sys . chr(0);
                 }
-		else {
-		    RB3::CLI::Graph::cmd_graph_complete($class, $app_config, $sys);
-                }
             }
             exit 0;
         }
@@ -156,6 +153,7 @@ sub build_host_config {
 
     write_configtool_meta($rb3, $fg, $app_config);
     write_configtool_manifests($rb3, $fg, $app_config);
+    RB3::CLI::Graph::cmd_graph(undef, $app_config, $hostdir);
 }
 
 sub write_configtool_meta {

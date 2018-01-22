@@ -1,8 +1,8 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.40/lib/RB3/CLI/UpdateSSHKeys.pm $
-# $LastChangedRevision: 16162 $
-# $LastChangedDate: 2009-09-11 17:50:45 +0100 (Fri, 11 Sep 2009) $
-# $LastChangedBy: tom $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.41.2/lib/RB3/CLI/UpdateSSHKeys.pm $
+# $LastChangedRevision: 22997 $
+# $LastChangedDate: 2014-02-07 23:57:05 +0000 (Fri, 07 Feb 2014) $
+# $LastChangedBy: worc2070 $
 #
 package RB3::CLI::UpdateSSHKeys;
 
@@ -88,7 +88,7 @@ sub ssh_keyscan {
     my @cmd = ( @SSH_KEYSCAN, $keytype, $hostname );
 
     my ( $out, $err );
-    unless ( run( \@cmd, \undef, \$out, \$err ) and $out =~ s/^\Q$hostname\E\s+ssh-(rsa|dss)\s+// ) {
+    unless ( run( \@cmd, \undef, \$out, \$err ) and $out =~ s/^\Q$hostname\E\s+ssh-(rsa|dss|ecdsa)\s+// ) {
         warn "failed to retrieve $keytype key for $hostname: $err\n";
         return;
     }
