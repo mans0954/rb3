@@ -1,0 +1,17 @@
+Source: rb3
+Section: admin
+Priority: optional
+Build-Depends: debhelper (>= 5.0.0)
+Build-Depends-Indep: perl (>= 5.8), libclass-std-perl, libclass-data-inheritable-perl, libnet-dns-perl, libnet-netmask-perl, libreadonly-perl, libtemplate-perl, libyaml-perl, libmodule-pluggable-perl, libterm-query-perl, libregexp-common-perl, libtemplate-plugin-yaml-perl, libsort-fields-perl, libipc-run-perl, libmath-random-isaac-perl, libnetaddr-ip-perl (>= 4)
+Maintainer: OUCS Systems Development and Support <sysdev@oucs.ox.ac.uk>
+Uploaders: Tom Jones <tom.jones@oucs.ox.ac.uk>, Dominic Hargreaves <dominic.hargreaves@oucs.ox.ac.uk>
+Standards-Version: 3.7.2
+XSBC-Origin-Hint-Subversion: $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.28/debian/control $
+
+Package: rb3
+Architecture: all
+Depends: ${perl:Depends}, libclass-std-perl, libclass-data-inheritable-perl, libnet-dns-perl, libnet-netmask-perl, libreadonly-perl, libtemplate-perl, libyaml-perl, libmodule-pluggable-perl, libterm-query-perl, libregexp-common-perl, libtemplate-plugin-yaml-perl, ssh-client, libsort-fields-perl, libipc-run-perl, libmath-random-isaac-perl, libnetaddr-ip-perl (>= 4)
+Recommends: sysdev-sysadmin-utils
+Description: configuration management tools
+ Libraries and RB3 command-line tool for generating and managing configuration
+ repositories.

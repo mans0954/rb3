@@ -1,5 +1,5 @@
 #
-# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.27/lib/RB3/Config.pm $
+# $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/packages/r/rb3/tags/1.28/lib/RB3/Config.pm $
 # $LastChangedRevision: 17932 $
 # $LastChangedDate: 2010-12-17 10:56:14 +0000 (Fri, 17 Dec 2010) $
 # $LastChangedBy: dom $

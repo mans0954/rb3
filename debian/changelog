@@ -1,3 +1,12 @@
+rb3 (1.28) unstable; urgency=low
+
+  * lib/RB3/TemplateFunctions.pm:
+    - new function compare_ips which compares IP addresses with
+      NetAddr::IP. This is better than comparing the string representations
+      directly, especially with IPv6
+
+ -- Dominic Hargreaves <dominic.hargreaves@oucs.ox.ac.uk>  Fri, 06 May 2011 15:32:29 +0100
+
 rb3 (1.27) unstable; urgency=low
 
   * Add mailing list info to README
