@@ -10,7 +10,7 @@ XSBC-Origin-Hint-Subversion: $HeadURL: https://svn.oucs.ox.ac.uk/sysdev/src/pack
 
 Package: rb3
 Architecture: all
-Depends: perl (>= 5.10.1), ${perl:Depends}, libclass-std-perl, libclass-data-inheritable-perl, libnet-dns-perl, libnet-netmask-perl, libreadonly-perl, libtemplate-perl, libyaml-perl, libmodule-pluggable-perl, libterm-query-perl, libregexp-common-perl, libtemplate-plugin-yaml-perl, ssh-client, libsort-fields-perl, libipc-run-perl, libmath-random-isaac-perl, libnetaddr-ip-perl (>= 4), liblist-moreutils-perl, libgraphviz-perl
+Depends: perl (>= 5.10.1), ${perl:Depends}, ${misc:Depends}, libclass-std-perl, libclass-data-inheritable-perl, libnet-dns-perl, libnet-netmask-perl, libreadonly-perl, libtemplate-perl, libyaml-perl, libmodule-pluggable-perl, libterm-query-perl, libregexp-common-perl, libtemplate-plugin-yaml-perl, ssh-client, libsort-fields-perl, libipc-run-perl, libmath-random-isaac-perl, libnetaddr-ip-perl (>= 4), liblist-moreutils-perl, libgraphviz-perl
 Recommends: sysdev-sysadmin-utils
 Suggests: xdot
 Description: configuration management tools

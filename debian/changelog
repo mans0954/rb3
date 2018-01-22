@@ -4,6 +4,7 @@ rb3 (1.42-1) UNRELEASED; urgency=medium
   * Bump compat from 4 to 10
   * Remove trailing whitespace from debian/changelog and debian/rules
   * Make this a non-native package
+  * Add ${misc:Depends} to debian/control
 
  -- Christopher Hoskin <mans0954@debian.org>  Mon, 22 Jan 2018 20:57:31 +0000
 
