@@ -12,6 +12,7 @@ rb3 (1.42-1) UNRELEASED; urgency=medium
   * Add debian/watch file
   * Patch for man page (man.patch)
   * Extend long description
+  * Bump Standards-Version from 3.7.2 to 4.1.3 (no change required)
 
  -- Christopher Hoskin <mans0954@debian.org>  Mon, 22 Jan 2018 20:57:31 +0000
 
