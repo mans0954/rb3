@@ -1,0 +1,13 @@
+Description: Patch for utf8
+Author: Christopher Hoskin <mans0954@debian.org>
+
+--- a/lib/RB3/FileGenerator.pm
++++ b/lib/RB3/FileGenerator.pm
+@@ -88,6 +88,7 @@
+ 
+         if ( $source =~ /\.tt$/ ) {
+             binmode( $tmp, ":utf8" );
++            $ifh->binmode( ":utf8" );
+ 
+             my $params = $self->get_params->merge( $file_params )->template_vars;
+ 

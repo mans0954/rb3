@@ -13,6 +13,7 @@ rb3 (1.42-1) UNRELEASED; urgency=medium
   * Patch for man page (man.patch)
   * Extend long description
   * Bump Standards-Version from 3.7.2 to 4.1.3 (no change required)
+  * Patch for utf8
 
  -- Christopher Hoskin <mans0954@debian.org>  Mon, 22 Jan 2018 20:57:31 +0000
 
